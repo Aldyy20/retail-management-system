@@ -79,9 +79,12 @@ Presentasi berubah mengikuti lebar jendela, arsitekturnya tidak:
 
 | Lebar | Bentuk navigasi |
 |---|---|
-| `< 600px` | Navigation bar di bawah |
+| `< 600px` | Navigation drawer sementara, dibuka dari tombol menu |
 | `600–1199px` | Navigation rail di kiri |
 | `>= 1200px` | Navigation drawer permanen |
+
+Layar sempit memakai drawer, bukan navigation bar di bawah, karena jumlah tujuan pada
+role admin sudah melewati batas nyaman sebuah bar dan akan terus bertambah.
 
 Daftar tujuan tumbuh mengikuti modul yang benar-benar sudah jadi. Tidak ada menu yang
 mengarah ke halaman kosong.

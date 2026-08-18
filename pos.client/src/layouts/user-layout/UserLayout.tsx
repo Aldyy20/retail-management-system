@@ -1,28 +1,58 @@
-import { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import { LogOut, Store } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { LogOut, Menu, Store, X } from "lucide-react";
 import { useAuth } from "@/components/router/AuthContext";
 import { getRolePath, menuItemsByRole } from "@/components/router/menu-items";
 import { NavDestinations } from "@/layouts/user-layout/NavDestinations";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { useSnackbar } from "@/components/ui/Snackbar";
 
 /**
  * Kerangka aplikasi untuk pengguna yang sudah masuk.
  *
  * Bentuk navigasi mengikuti lebar jendela sesuai panduan adaptif Material 3:
- * navigation bar di bawah pada layar sempit, navigation rail pada layar sedang,
- * dan navigation drawer permanen pada layar lebar.
+ * drawer sementara yang dibuka dari tombol menu pada layar sempit, navigation rail
+ * pada layar sedang, dan navigation drawer permanen pada layar lebar.
+ *
+ * Bentuk sempit memakai drawer, bukan navigation bar bawah, karena jumlah tujuan
+ * pada role admin melewati batas nyaman sebuah bar.
  */
 export function UserLayout() {
     const { currentUser, logout } = useAuth();
     const { infoNotify } = useSnackbar();
     const navigate = useNavigate();
+    const location = useLocation();
+
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    /**
+     * Drawer sementara diikat pada halaman tempat ia dibuka. Begitu pengguna berpindah
+     * halaman, termasuk lewat tombol kembali browser, drawer tertutup dengan sendirinya
+     * tanpa perlu efek yang mengubah state.
+     */
+    const [drawerOpenedAtPath, setDrawerOpenedAtPath] = useState<string | null>(null);
+    const showMobileDrawer = drawerOpenedAtPath === location.pathname;
+    const closeMobileDrawer = () => setDrawerOpenedAtPath(null);
 
     const rolePath = getRolePath(currentUser?.Role);
     const menuItems = menuItemsByRole[currentUser?.Role ?? ""] ?? [];
+
+    useEffect(() => {
+        if (!showMobileDrawer) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                closeMobileDrawer();
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [showMobileDrawer]);
 
     const handleLogout = () => {
         setIsLoggingOut(true);
@@ -35,13 +65,24 @@ export function UserLayout() {
         <div className="min-h-dvh bg-surface text-on-surface">
             <a
                 href="#konten-utama"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-(--radius-control) focus:bg-primary focus:px-4 focus:py-2 focus:text-on-primary"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-60 focus:rounded-(--radius-control) focus:bg-primary focus:px-4 focus:py-2 focus:text-on-primary"
             >
                 Lompat ke konten utama
             </a>
 
-            <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-outline-variant bg-surface-low px-4">
-                <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-(--radius-control) bg-primary-container text-on-primary-container">
+            <header className="sticky top-0 z-30 flex min-h-16 items-center gap-2 border-b border-outline-variant bg-surface-low px-3 medium:gap-3 medium:px-4">
+                <IconButton
+                    label="Buka menu navigasi"
+                    icon={<Menu size={20} />}
+                    onClick={() => setDrawerOpenedAtPath(location.pathname)}
+                    aria-expanded={showMobileDrawer}
+                    className="medium:hidden"
+                />
+
+                <span
+                    aria-hidden="true"
+                    className="hidden size-9 items-center justify-center rounded-(--radius-control) bg-primary-container text-on-primary-container medium:flex"
+                >
                     <Store size={18} />
                 </span>
 
@@ -61,42 +102,64 @@ export function UserLayout() {
                     isLoading={isLoggingOut}
                     className="px-2 medium:px-4"
                 >
-                    {/* Satu label saja: tersembunyi secara visual di layar sempit, tetap terbaca pembaca layar. */}
                     <span className="sr-only medium:not-sr-only">Keluar</span>
                 </Button>
             </header>
 
             <div className="flex">
-                {/* Navigation rail: lebar sedang. */}
                 <nav
                     aria-label="Navigasi utama"
-                    className="hidden medium:block large:hidden sticky top-16 h-[calc(100dvh-4rem)] w-20 shrink-0 border-r border-outline-variant bg-surface-low"
+                    className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-20 shrink-0 overflow-y-auto border-r border-outline-variant bg-surface-low medium:block large:hidden"
                 >
                     <NavDestinations items={menuItems} rolePath={rolePath} shape="rail" />
                 </nav>
 
-                {/* Navigation drawer permanen: lebar besar. */}
                 <nav
                     aria-label="Navigasi utama"
-                    className="hidden large:block sticky top-16 h-[calc(100dvh-4rem)] w-64 shrink-0 border-r border-outline-variant bg-surface-low"
+                    className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-outline-variant bg-surface-low large:block"
                 >
                     <NavDestinations items={menuItems} rolePath={rolePath} shape="drawer" />
                 </nav>
 
-                <main id="konten-utama" className="min-w-0 flex-1 px-4 pt-6 pb-24 medium:px-6 medium:pb-8">
+                <main id="konten-utama" className="min-w-0 flex-1 px-4 pt-6 pb-10 medium:px-6">
                     <div className="mx-auto max-w-[1400px]">
                         <Outlet />
                     </div>
                 </main>
             </div>
 
-            {/* Navigation bar: lebar sempit. */}
-            <nav
-                aria-label="Navigasi utama"
-                className="fixed inset-x-0 bottom-0 z-30 border-t border-outline-variant bg-surface-low px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] medium:hidden"
-            >
-                <NavDestinations items={menuItems} rolePath={rolePath} shape="bar" />
-            </nav>
+            {showMobileDrawer ? (
+                <div
+                    className="fixed inset-0 z-40 bg-scrim/50 medium:hidden"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
+                            closeMobileDrawer();
+                        }
+                    }}
+                >
+                    <nav
+                        aria-label="Navigasi utama"
+                        className="h-full w-72 max-w-[85vw] overflow-y-auto bg-surface-low shadow-xl shadow-black/25"
+                    >
+                        <div className="flex min-h-16 items-center justify-between gap-2 border-b border-outline-variant px-4">
+                            <p className="truncate text-title text-on-surface">{currentUser?.FullName}</p>
+                            <IconButton
+                                label="Tutup menu navigasi"
+                                icon={<X size={20} />}
+                                onClick={closeMobileDrawer}
+                                autoFocus
+                            />
+                        </div>
+
+                        <NavDestinations
+                            items={menuItems}
+                            rolePath={rolePath}
+                            shape="drawer"
+                            onNavigate={closeMobileDrawer}
+                        />
+                    </nav>
+                </div>
+            ) : null}
         </div>
     );
 }

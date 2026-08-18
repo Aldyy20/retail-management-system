@@ -1,4 +1,4 @@
-import { LayoutDashboard } from "lucide-react";
+import { Boxes, LayoutDashboard, Package, Ruler, Tags, Truck, Users, Warehouse } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROLE_ADMIN, ROLE_KARYAWAN, ROLE_OWNER, ROLE_SUPERVISOR } from "@/services/global.types";
 
@@ -7,6 +7,8 @@ export interface MenuItem {
     path: string;
     label: string;
     icon: LucideIcon;
+    /** Judul kelompok. Tujuan pertama dalam kelompok yang membawanya. */
+    groupLabel?: string;
 }
 
 /**
@@ -18,8 +20,17 @@ export interface MenuItem {
  */
 const dashboardItem: MenuItem = { path: "dashboard", label: "Dashboard", icon: LayoutDashboard };
 
+const adminMasterDataItems: MenuItem[] = [
+    { path: "product", label: "Produk", icon: Package, groupLabel: "Master data" },
+    { path: "category", label: "Kategori", icon: Tags },
+    { path: "unit", label: "Satuan", icon: Ruler },
+    { path: "warehouse", label: "Gudang", icon: Warehouse },
+    { path: "supplier", label: "Supplier", icon: Truck },
+    { path: "employee", label: "Pengguna", icon: Users },
+];
+
 export const menuItemsByRole: Record<string, MenuItem[]> = {
-    [ROLE_ADMIN]: [dashboardItem],
+    [ROLE_ADMIN]: [dashboardItem, ...adminMasterDataItems],
     [ROLE_OWNER]: [dashboardItem],
     [ROLE_SUPERVISOR]: [dashboardItem],
     [ROLE_KARYAWAN]: [dashboardItem],
@@ -36,3 +47,6 @@ export const rolePathByRole: Record<string, string> = {
 export function getRolePath(roleName: string | undefined): string {
     return rolePathByRole[roleName ?? ""] ?? "";
 }
+
+/** Ikon yang dipakai bila kelompok butuh lambang sendiri pada rail sempit. */
+export const groupIcon = Boxes;

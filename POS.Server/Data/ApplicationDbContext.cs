@@ -18,6 +18,17 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     #endregion
 
+    #region Master Data
+
+    public DbSet<Category> Category => Set<Category>();
+    public DbSet<Unit> Unit => Set<Unit>();
+    public DbSet<Warehouse> Warehouse => Set<Warehouse>();
+    public DbSet<Supplier> Supplier => Set<Supplier>();
+    public DbSet<Product> Product => Set<Product>();
+    public DbSet<PriceHistory> PriceHistory => Set<PriceHistory>();
+
+    #endregion
+
     /// <summary>
     /// Seluruh waktu disimpan sebagai waktu lokal toko tanpa zona waktu, karena laporan
     /// harian dikelompokkan menurut tanggal buka toko, bukan menurut UTC.
@@ -55,5 +66,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
         builder.ApplyConfiguration(new SystemSettingConfiguration());
         builder.ApplyConfiguration(new AuditLogConfiguration());
+
+        builder.ApplyConfiguration(new CategoryConfiguration());
+        builder.ApplyConfiguration(new UnitConfiguration());
+        builder.ApplyConfiguration(new WarehouseConfiguration());
+        builder.ApplyConfiguration(new SupplierConfiguration());
+        builder.ApplyConfiguration(new ProductConfiguration());
+        builder.ApplyConfiguration(new PriceHistoryConfiguration());
     }
 }
