@@ -24,3 +24,7 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Secret lokal (JWT signing key, password database, password admin awal).
+# Salin appsettings.Development.example.json menjadi appsettings.Development.json lalu isi nilainya.
+POS.Server/appsettings.Development.json
