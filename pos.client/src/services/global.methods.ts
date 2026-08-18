@@ -1,0 +1,43 @@
+import axios from "axios";
+
+/**
+ * Backend selalu mengembalikan pesan siap tampil dalam bahasa Indonesia pada body respons.
+ * Fungsi ini menariknya keluar, dan hanya jatuh ke pesan umum kalau benar-benar tidak ada.
+ */
+export function getAxiosErrorMessage(error: unknown): string {
+    if (axios.isAxiosError(error)) {
+        if (error.response) {
+            const data = error.response.data;
+
+            if (typeof data === "string" && data.trim().length > 0) {
+                return data;
+            }
+
+            if (data && typeof data === "object" && "title" in data && typeof data.title === "string") {
+                return data.title;
+            }
+
+            return `Permintaan gagal dengan status ${error.response.status}.`;
+        }
+
+        if (error.code === "ERR_NETWORK") {
+            return "Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.";
+        }
+    }
+
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    return "Terjadi kesalahan yang tidak diketahui.";
+}
+
+const currencyFormatter = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 });
+
+export function formatMoney(value: number | null | undefined): string {
+    return "Rp" + currencyFormatter.format(value ?? 0);
+}
+
+export function formatNumber(value: number | null | undefined): string {
+    return currencyFormatter.format(value ?? 0);
+}

@@ -20,6 +20,21 @@ public class AuthApiController : BaseApiController
         EntityName = "Autentikasi";
     }
 
+    /// <summary>
+    /// Identitas toko untuk halaman masuk. Sengaja dibuka tanpa autentikasi supaya
+    /// pengguna tahu sedang masuk ke toko yang benar, dan hanya berisi nama serta alamat.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("get-store-info")]
+    public async Task<IActionResult> GetStoreInfoAsync()
+    {
+        return Ok(new StoreInfoModel
+        {
+            StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
+            StoreAddress = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreAddress),
+        });
+    }
+
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequestModel model)

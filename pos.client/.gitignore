@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Hasil bundel sementara skrip pembangkit tema
+scripts/.theme-build.mjs

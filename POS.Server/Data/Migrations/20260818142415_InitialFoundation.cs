@@ -39,9 +39,9 @@ namespace POS.Server.Data.Migrations
                     Description = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     IsEditable = table.Column<bool>(type: "boolean", nullable: false),
-                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     CreatedById = table.Column<string>(type: "text", nullable: true),
-                    DateModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DateModified = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     ModifiedById = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -56,9 +56,9 @@ namespace POS.Server.Data.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     FullName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     CreatedById = table.Column<string>(type: "character varying(36)", maxLength: 36, nullable: true),
-                    DateModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DateModified = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     ModifiedById = table.Column<string>(type: "character varying(36)", maxLength: 36, nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -113,7 +113,7 @@ namespace POS.Server.Data.Migrations
                     OldValue = table.Column<string>(type: "text", nullable: true),
                     NewValue = table.Column<string>(type: "text", nullable: true),
                     IpAddress = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     CreatedById = table.Column<string>(type: "character varying(36)", maxLength: 36, nullable: true)
                 },
                 constraints: table =>

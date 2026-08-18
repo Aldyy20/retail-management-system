@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "./m3-theme.css";
+
+/*
+ * Token sistem desain. `@theme inline` dipakai supaya utility Tailwind merujuk langsung
+ * ke variabel M3, sehingga pergantian tema terang/gelap berlaku tanpa membangun ulang CSS.
+ */
+@theme inline {
+    --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+
+    /* Kelas lebar jendela Material 3, dipakai untuk memilih bentuk navigasi. */
+    --breakpoint-medium: 600px;
+    --breakpoint-expanded: 840px;
+    --breakpoint-large: 1200px;
+
+    --color-primary: var(--md-primary);
+    --color-on-primary: var(--md-on-primary);
+    --color-primary-container: var(--md-primary-container);
+    --color-on-primary-container: var(--md-on-primary-container);
+    --color-inverse-primary: var(--md-inverse-primary);
+
+    --color-secondary: var(--md-secondary);
+    --color-on-secondary: var(--md-on-secondary);
+    --color-secondary-container: var(--md-secondary-container);
+    --color-on-secondary-container: var(--md-on-secondary-container);
+
+    --color-tertiary: var(--md-tertiary);
+    --color-on-tertiary: var(--md-on-tertiary);
+    --color-tertiary-container: var(--md-tertiary-container);
+    --color-on-tertiary-container: var(--md-on-tertiary-container);
+
+    --color-error: var(--md-error);
+    --color-on-error: var(--md-on-error);
+    --color-error-container: var(--md-error-container);
+    --color-on-error-container: var(--md-on-error-container);
+
+    --color-success: var(--md-success);
+    --color-on-success: var(--md-on-success);
+    --color-success-container: var(--md-success-container);
+    --color-on-success-container: var(--md-on-success-container);
+
+    --color-pending: var(--md-pending);
+    --color-on-pending: var(--md-on-pending);
+    --color-pending-container: var(--md-pending-container);
+    --color-on-pending-container: var(--md-on-pending-container);
+
+    --color-surface: var(--md-surface);
+    --color-on-surface: var(--md-on-surface);
+    --color-surface-variant: var(--md-surface-variant);
+    --color-on-surface-variant: var(--md-on-surface-variant);
+    --color-surface-dim: var(--md-surface-dim);
+    --color-surface-bright: var(--md-surface-bright);
+    --color-surface-lowest: var(--md-surface-container-lowest);
+    --color-surface-low: var(--md-surface-container-low);
+    --color-surface-container: var(--md-surface-container);
+    --color-surface-high: var(--md-surface-container-high);
+    --color-surface-highest: var(--md-surface-container-highest);
+
+    --color-outline: var(--md-outline);
+    --color-outline-variant: var(--md-outline-variant);
+    --color-scrim: var(--md-scrim);
+    --color-inverse-surface: var(--md-inverse-surface);
+    --color-inverse-on-surface: var(--md-inverse-on-surface);
+
+    /* Skala sudut dibatasi empat nilai. Alasannya ada di DESIGN.md. */
+    --radius-chip: 4px;
+    --radius-control: 8px;
+    --radius-card: 12px;
+    --radius-panel: 16px;
+}
+
+/*
+ * Peran tipografi M3 yang benar-benar dipakai. Peran `display` sengaja tidak ada
+ * karena tidak ada layar yang membutuhkan teks sebesar itu.
+ */
+@layer base {
+    .text-headline {
+        font-size: 1.5rem;
+        line-height: 2rem;
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .text-title {
+        font-size: 1rem;
+        line-height: 1.5rem;
+        font-weight: 600;
+        letter-spacing: 0.009em;
+    }
+
+    .text-title-small {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        letter-spacing: 0.007em;
+    }
+
+    .text-body {
+        font-size: 0.875rem;
+        line-height: 1.375rem;
+        letter-spacing: 0.017em;
+    }
+
+    .text-label {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 500;
+        letter-spacing: 0.007em;
+    }
+
+    .text-label-small {
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+    }
+
+    /*
+     * Motif identitas: setiap nominal dan kuantitas memakai angka tabular rata kanan,
+     * supaya kolom uang berbaris rapi dan selisihnya terlihat tanpa dibaca satu per satu.
+     */
+    .text-numeric {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+        text-align: right;
+    }
+
+    html {
+        background-color: var(--md-surface);
+    }
+
+    body {
+        margin: 0;
+        background-color: var(--md-surface);
+        color: var(--md-on-surface);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* Fokus harus selalu terlihat. Outline bawaan diganti, bukan dihapus. */
+    :focus-visible {
+        outline: 2px solid var(--md-primary);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    /* Menghormati preferensi pengurangan gerak pada tingkat aplikasi. */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}

@@ -18,6 +18,18 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     #endregion
 
+    /// <summary>
+    /// Seluruh waktu disimpan sebagai waktu lokal toko tanpa zona waktu, karena laporan
+    /// harian dikelompokkan menurut tanggal buka toko, bukan menurut UTC.
+    /// ponytail: cukup untuk satu toko satu zona waktu. Jika nanti ada cabang lintas zona,
+    /// pindahkan ke timestamptz berbasis UTC dan konversi saat menampilkan.
+    /// </summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder builder)
+    {
+        builder.Properties<DateTime>().HaveColumnType("timestamp without time zone");
+        builder.Properties<DateTime?>().HaveColumnType("timestamp without time zone");
+    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
