@@ -20,6 +20,10 @@ const SupplierCreateEditPage = lazy(() => import("@/pages/user-pages/common-page
 const EmployeePage = lazy(() => import("@/pages/user-pages/common-pages/employee/EmployeePage"));
 const EmployeeCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages/employee/EmployeeCreateEditPage"));
 
+// Inventory Pages
+const InventoryPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/InventoryPage"));
+const StockMovementPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/StockMovementPage"));
+
 export const adminRoutes: RouteObject[] = [
     { path: "", element: <Navigate to="/admin/dashboard" replace /> },
     { path: "dashboard", element: <DashboardPage /> },
@@ -54,4 +58,8 @@ export const adminRoutes: RouteObject[] = [
     { path: "employee", element: <EmployeePage /> },
     { path: "employee/create", element: <EmployeeCreateEditPage /> },
     { path: "employee/edit/:id", element: <EmployeeCreateEditPage /> },
+
+    // Inventory Routes
+    { path: "inventory", element: <InventoryPage /> },
+    { path: "stock-movement", element: <StockMovementPage /> },
 ];

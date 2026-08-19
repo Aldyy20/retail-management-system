@@ -12,6 +12,12 @@ interface UseListPageOptions {
     deleteUrl?: string;
     /** Kolom urutan awal, memakai nama properti backend. */
     defaultSortBy?: string;
+
+    /**
+     * Penyaring tambahan milik halaman, contoh IdWarehouse atau Status.
+     * Ikut dikirim pada setiap permintaan daftar dan memicu muat ulang saat berubah.
+     */
+    extraRequest?: Record<string, unknown>;
 }
 
 /**
@@ -21,7 +27,7 @@ interface UseListPageOptions {
  * Diambil keluar dari halaman karena keenam halaman master data melakukan hal yang
  * sama persis; yang berbeda hanya kolom tabelnya, dan itu tetap ditulis di halaman.
  */
-export function useListPage<TRow>({ listUrl, deleteUrl, defaultSortBy }: UseListPageOptions) {
+export function useListPage<TRow>({ listUrl, deleteUrl, defaultSortBy, extraRequest }: UseListPageOptions) {
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [listData, setListData] = useState<TRow[]>([]);
@@ -33,6 +39,10 @@ export function useListPage<TRow>({ listUrl, deleteUrl, defaultSortBy }: UseList
 
     const { currentPage, rowsPerPage, sortBy, reverseSort, searchPhrase } = paging;
 
+    // Penyaring dibandingkan sebagai teks supaya objek baru dengan isi sama tidak
+    // memicu permintaan ulang setiap kali halaman dirender.
+    const extraRequestKey = JSON.stringify(extraRequest ?? {});
+
     const getListData = useCallback(() => {
         const model: BaseGetListRequestModel = {
             CurrentPage: currentPage,
@@ -43,7 +53,7 @@ export function useListPage<TRow>({ listUrl, deleteUrl, defaultSortBy }: UseList
         };
 
         return api
-            .post<BaseGetListResponseModel<TRow>>(listUrl, model)
+            .post<BaseGetListResponseModel<TRow>>(listUrl, { ...model, ...JSON.parse(extraRequestKey) })
             .then((response) => {
                 setListData(response.data.Rows);
                 setPaging((current) => ({ ...current, totalRecords: response.data.TotalRecords }));
@@ -51,7 +61,7 @@ export function useListPage<TRow>({ listUrl, deleteUrl, defaultSortBy }: UseList
             })
             .catch((error) => setErrorMessage(getAxiosErrorMessage(error)))
             .finally(() => setIsLoading(false));
-    }, [listUrl, currentPage, rowsPerPage, sortBy, reverseSort, searchPhrase]);
+    }, [listUrl, currentPage, rowsPerPage, sortBy, reverseSort, searchPhrase, extraRequestKey]);
 
     useEffect(() => {
         getListData();

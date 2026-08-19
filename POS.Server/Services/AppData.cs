@@ -52,6 +52,38 @@ public static class AppData
 
     #endregion
 
+    #region Jenis Approval
+
+    /// <summary>
+    /// Kode jenis tindakan yang dapat membutuhkan persetujuan. Disimpan sebagai kode
+    /// pada approval_requests, sehingga jenis baru dapat ditambahkan tanpa mengubah tabel.
+    /// </summary>
+    public const string ApprovalTypeGoodsReceiving = "GOODS_RECEIVING";
+    public const string ApprovalTypeStockAdjustment = "STOCK_ADJUSTMENT";
+    public const string ApprovalTypeVoidTransaction = "VOID_TRANSACTION";
+
+    /// <summary>Pengaturan yang menentukan apakah jenis tindakan tersebut butuh persetujuan.</summary>
+    public static string GetApprovalSettingKey(string approvalTypeCode)
+    {
+        return approvalTypeCode switch
+        {
+            ApprovalTypeGoodsReceiving => SettingInventoryApprovalGoodsReceiving,
+            ApprovalTypeStockAdjustment => SettingInventoryApprovalStockAdjustment,
+            ApprovalTypeVoidTransaction => SettingTransactionApprovalVoid,
+            _ => string.Empty,
+        };
+    }
+
+    #endregion
+
+    #region Awalan Nomor Dokumen
+
+    public const string PrefixGoodsReceiving = "GR";
+    public const string PrefixStockOpname = "SO";
+    public const string PrefixTransaction = "INV";
+
+    #endregion
+
     #region Kunci Cache
 
     public const string CacheKeySystemSetting = "SystemSetting";

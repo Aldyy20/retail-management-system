@@ -103,3 +103,24 @@ public class CreateEditProductModel : BaseProductModel
     [StringLength(256)]
     public string? PriceChangeNote { get; set; }
 }
+
+/// <summary>
+/// Produk dalam bentuk ringkas untuk pencarian cepat pada form barang masuk,
+/// stock opname, dan layar kasir.
+/// </summary>
+public class ProductLookupModel
+{
+    public string IdProduct { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
+    public string? Barcode { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string UnitName { get; set; } = string.Empty;
+    public decimal CostPrice { get; set; }
+    public decimal SellingPrice { get; set; }
+
+    /// <summary>Stok pada gudang yang sedang dipilih. Nol bila produk belum pernah masuk.</summary>
+    public int Stock { get; set; }
+
+    public string StrCostPrice => CostPrice.ToStrMoney();
+    public string StrSellingPrice => SellingPrice.ToStrMoney();
+}

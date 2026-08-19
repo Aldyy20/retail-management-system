@@ -29,6 +29,23 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     #endregion
 
+    #region Inventory
+
+    public DbSet<Inventory> Inventory => Set<Inventory>();
+    public DbSet<StockMovement> StockMovement => Set<StockMovement>();
+    public DbSet<GoodsReceiving> GoodsReceiving => Set<GoodsReceiving>();
+    public DbSet<GoodsReceivingDetail> GoodsReceivingDetail => Set<GoodsReceivingDetail>();
+    public DbSet<StockOpname> StockOpname => Set<StockOpname>();
+    public DbSet<StockOpnameDetail> StockOpnameDetail => Set<StockOpnameDetail>();
+
+    #endregion
+
+    #region Approval
+
+    public DbSet<ApprovalRequest> ApprovalRequest => Set<ApprovalRequest>();
+
+    #endregion
+
     /// <summary>
     /// Seluruh waktu disimpan sebagai waktu lokal toko tanpa zona waktu, karena laporan
     /// harian dikelompokkan menurut tanggal buka toko, bukan menurut UTC.
@@ -73,5 +90,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         builder.ApplyConfiguration(new SupplierConfiguration());
         builder.ApplyConfiguration(new ProductConfiguration());
         builder.ApplyConfiguration(new PriceHistoryConfiguration());
+
+        builder.ApplyConfiguration(new InventoryConfiguration());
+        builder.ApplyConfiguration(new StockMovementConfiguration());
+        builder.ApplyConfiguration(new GoodsReceivingConfiguration());
+        builder.ApplyConfiguration(new GoodsReceivingDetailConfiguration());
+        builder.ApplyConfiguration(new StockOpnameConfiguration());
+        builder.ApplyConfiguration(new StockOpnameDetailConfiguration());
+        builder.ApplyConfiguration(new ApprovalRequestConfiguration());
     }
 }

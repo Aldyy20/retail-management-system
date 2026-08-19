@@ -41,3 +41,24 @@ export function formatMoney(value: number | null | undefined): string {
 export function formatNumber(value: number | null | undefined): string {
     return currencyFormatter.format(value ?? 0);
 }
+
+/**
+ * Warna penanda untuk status siklus hidup dokumen. Selalu dipasangkan dengan label teks,
+ * jadi warna hanya memperkuat, bukan menjadi satu-satunya penanda.
+ */
+export function getDocumentStatusTone(status: number): "pending" | "success" | "error" | "neutral" | "info" {
+    switch (status) {
+        case 2:
+            return "pending";
+        case 3:
+        case 6:
+            return "success";
+        case 4:
+            return "error";
+        case 5:
+        case 7:
+            return "neutral";
+        default:
+            return "info";
+    }
+}
