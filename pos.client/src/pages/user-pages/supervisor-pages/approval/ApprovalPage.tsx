@@ -22,7 +22,6 @@ const statusFilters = [
     { value: "", label: "Semua" },
 ];
 
-/** Alamat halaman detail dokumen menurut jenis persetujuannya. */
 const detailPathByType: Record<string, string> = {
     GOODS_RECEIVING: "/supervisor/goods-receiving/details",
     STOCK_ADJUSTMENT: "/supervisor/stock-opname/details",
@@ -108,10 +107,10 @@ export default function ApprovalPage() {
                     aria-pressed={statusFilter === filter.value}
                     onClick={() => setStatusFilter(filter.value)}
                     className={[
-                        "min-h-11 rounded-(--radius-control) border px-4 text-label transition-colors",
+                        "min-h-10 rounded-lg border px-3.5 text-xs font-semibold transition-all cursor-pointer",
                         statusFilter === filter.value
-                            ? "border-primary bg-secondary-container text-on-secondary-container"
-                            : "border-outline text-on-surface-variant hover:bg-on-surface/8",
+                            ? "border-primary bg-primary text-white shadow-xs"
+                            : "border-outline-variant bg-surface-lowest text-on-surface hover:bg-surface-muted",
                     ].join(" ")}
                 >
                     {filter.label}
@@ -123,10 +122,10 @@ export default function ApprovalPage() {
     return (
         <>
             <ListPageShell
-                title="Persetujuan"
+                title="Pusat Persetujuan"
                 description="Tindakan yang menunggu keputusan Anda. Perubahan stok baru berlaku setelah permintaannya disetujui."
                 primaryAction={filterButtons}
-                searchPlaceholder="Cari judul atau nomor dokumen"
+                searchPlaceholder="Cari judul atau nomor dokumen..."
                 emptyTitle={statusFilter === "pending" ? "Tidak ada yang menunggu" : "Belum ada permintaan"}
                 emptyDescription={
                     statusFilter === "pending"
@@ -143,17 +142,17 @@ export default function ApprovalPage() {
                 onPageSizeChange={list.setPageSizeOption}
             >
                 <table className="w-full min-w-[52rem] border-collapse text-left">
-                    <thead className="border-b border-outline-variant bg-surface-low">
+                    <thead className="border-b border-outline-variant bg-surface-muted/70">
                         <tr>
                             <ColumnSorting label="Permintaan" sortKey="Title" {...sortProps} />
-                            <th scope="col" className="px-4 py-3 text-label-small text-on-surface-variant">
+                            <th scope="col" className="px-4 py-3.5 text-label-small font-semibold text-on-surface-variant">
                                 Jenis
                             </th>
                             <ColumnSorting label="Diajukan" sortKey="DateCreated" {...sortProps} />
-                            <th scope="col" className="px-4 py-3 text-label-small text-on-surface-variant">
+                            <th scope="col" className="px-4 py-3.5 text-label-small font-semibold text-on-surface-variant">
                                 Status
                             </th>
-                            <th scope="col" className="px-4 py-3 text-right text-label-small text-on-surface-variant">
+                            <th scope="col" className="px-4 py-3.5 text-right text-label-small font-semibold text-on-surface-variant">
                                 Aksi
                             </th>
                         </tr>
@@ -161,28 +160,32 @@ export default function ApprovalPage() {
 
                     <tbody className="divide-y divide-outline-variant">
                         {list.listData.map((row) => (
-                            <tr key={row.IdApprovalRequest} className="hover:bg-on-surface/4">
-                                <td className="px-4 py-3">
-                                    <p className="text-body text-on-surface">{row.Title}</p>
+                            <tr key={row.IdApprovalRequest} className="hover:bg-surface-muted/40 transition-colors">
+                                <td className="px-4 py-3.5">
+                                    <p className="font-heading font-semibold text-sm text-on-surface">{row.Title}</p>
                                     {row.Description ? (
-                                        <p className="text-label-small text-on-surface-variant">{row.Description}</p>
+                                        <p className="text-xs text-on-surface-variant mt-0.5">{row.Description}</p>
                                     ) : null}
                                 </td>
-                                <td className="px-4 py-3 text-body text-on-surface-variant">{row.StrApprovalType}</td>
-                                <td className="px-4 py-3">
-                                    <p className="text-body text-on-surface-variant">{row.StrDateCreated}</p>
-                                    <p className="text-label-small text-on-surface-variant">
+                                <td className="px-4 py-3.5 text-xs font-medium text-on-surface-variant">
+                                    <span className="px-2 py-1 rounded bg-surface-muted border border-outline-variant">
+                                        {row.StrApprovalType}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3.5">
+                                    <p className="text-xs text-on-surface font-medium">{row.StrDateCreated}</p>
+                                    <p className="text-[11px] text-on-surface-variant">
                                         oleh {row.RequestedBy ?? "tidak diketahui"}
                                     </p>
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-3.5">
                                     <StatusPill tone={getDocumentStatusTone(row.Status)} label={row.StrStatus} />
                                     {row.DecidedBy ? (
-                                        <p className="mt-1 text-label-small text-on-surface-variant">oleh {row.DecidedBy}</p>
+                                        <p className="mt-1 text-[11px] text-on-surface-variant">oleh {row.DecidedBy}</p>
                                     ) : null}
                                 </td>
-                                <td className="px-4 py-2">
-                                    <div className="flex justify-end gap-1">
+                                <td className="px-4 py-3.5">
+                                    <div className="flex justify-end gap-1.5">
                                         <IconButton
                                             label={`Lihat dokumen ${row.ReferenceNumber ?? row.Title}`}
                                             icon={<Eye size={16} />}
@@ -194,13 +197,13 @@ export default function ApprovalPage() {
                                                     label={`Setujui ${row.Title}`}
                                                     icon={<Check size={16} />}
                                                     onClick={() => openDecisionModal(row, true)}
-                                                    className="hover:bg-success/12 hover:text-success"
+                                                    className="hover:bg-success/15 hover:text-success text-success"
                                                 />
                                                 <IconButton
                                                     label={`Tolak ${row.Title}`}
                                                     icon={<X size={16} />}
                                                     onClick={() => openDecisionModal(row, false)}
-                                                    className="hover:bg-error/12 hover:text-error"
+                                                    className="hover:bg-error/15 hover:text-error text-error"
                                                 />
                                             </>
                                         ) : null}
@@ -214,11 +217,11 @@ export default function ApprovalPage() {
 
             <Dialog
                 isOpen={Boolean(decision)}
-                title={decision?.isApprove ? "Setujui permintaan ini?" : "Tolak permintaan ini?"}
+                title={decision?.isApprove ? "Setujui Permintaan Dokumen" : "Tolak Permintaan Dokumen"}
                 description={
                     decision?.isApprove
-                        ? `${decision.row.Title} akan diterapkan ke stok segera setelah Anda menyetujuinya.`
-                        : `${decision?.row.Title ?? ""} dikembalikan ke pengaju untuk diperbaiki. Stok tidak berubah.`
+                        ? `${decision.row.Title} akan langsung diterapkan ke stok setelah disetujui.`
+                        : `${decision?.row.Title ?? ""} akan dikembalikan ke pengaju untuk diperbaiki.`
                 }
                 onClose={closeDecisionModal}
                 actions={
@@ -231,19 +234,19 @@ export default function ApprovalPage() {
                             onClick={saveDecision}
                             isLoading={isDeciding}
                         >
-                            {decision?.isApprove ? "Setujui" : "Tolak"}
+                            {decision?.isApprove ? "Setujui Permintaan" : "Tolak Permintaan"}
                         </Button>
                     </>
                 }
             >
                 <Textarea
-                    label={decision?.isApprove ? "Catatan persetujuan" : "Alasan penolakan"}
+                    label={decision?.isApprove ? "Catatan Persetujuan (Opsional)" : "Alasan Penolakan (Wajib)"}
                     required={!decision?.isApprove}
-                    placeholder={decision?.isApprove ? "Fisik barang sudah dicek" : "Jumlah tidak cocok dengan surat jalan"}
+                    placeholder={decision?.isApprove ? "Fisik barang sudah diperiksa dan cocok" : "Jumlah fisik tidak sesuai dengan surat jalan supplier"}
                     helperText={
                         decision?.isApprove
-                            ? "Opsional. Tersimpan pada riwayat dokumen."
-                            : "Wajib diisi. Pengaju membacanya untuk memperbaiki dokumen."
+                            ? "Tersimpan pada riwayat jejak audit dokumen."
+                            : "Wajib diisi agar pengaju memahami revisi yang diperlukan."
                     }
                     value={decisionNote}
                     onChange={(event) => setDecisionNote(event.target.value)}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, UserRound, X } from "lucide-react";
+import { Star, User, UserPlus, UserRound, X } from "lucide-react";
 import { api } from "@/services/api";
 import { useRolePath } from "@/hooks/useRolePath";
 import { getAxiosErrorMessage } from "@/services/global.methods";
@@ -11,7 +11,6 @@ import { ErrorAlert } from "@/components/common/ErrorAlert";
 import type { QueryMemberModel, PointRedemptionOptionModel } from "@/@dataLayer/member.models";
 
 interface MemberPanelProps {
-    /** Member yang sedang melekat pada keranjang, hasil perhitungan server. */
     member: QueryMemberModel | null;
     listRedemptionOption: PointRedemptionOptionModel[];
     idPointRedemptionRule: string | null;
@@ -21,13 +20,6 @@ interface MemberPanelProps {
     onSelectRedemption: (idRule: string | null) => void;
 }
 
-/**
- * Panel member pada layar kasir.
- *
- * Hanya dirender ketika sistem member aktif. Saldo point dan pilihan penukaran
- * seluruhnya berasal dari server, sehingga layar tidak pernah menawarkan potongan
- * yang tidak akan disetujui saat disimpan.
- */
 export function MemberPanel({
     member,
     listRedemptionOption,
@@ -91,63 +83,90 @@ export function MemberPanel({
 
     return (
         <>
-            <div className="border-b border-outline-variant px-4 py-3">
+            <div className="border-b border-outline-variant px-4 py-3 bg-surface-muted/20">
                 {member ? (
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                            <p className="text-title-small text-on-surface">{member.MemberName}</p>
-                            <p className="text-label-small text-on-surface-variant">
-                                {member.PhoneNumber}
-                                {isLoyaltyEnabled ? ` · ${member.PointBalance} point` : ""}
-                            </p>
+                    <div className="bg-surface-lowest border border-outline-variant rounded-xl p-3 shadow-xs space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="size-9 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                    {member.MemberName ? member.MemberName.charAt(0).toUpperCase() : <User size={16} />}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="font-heading text-title-small text-on-surface truncate leading-tight">
+                                        {member.MemberName}
+                                    </p>
+                                    <p className="text-xs text-on-surface-variant font-mono-receipt">
+                                        {member.PhoneNumber}
+                                    </p>
+                                </div>
+                            </div>
+                            <IconButton
+                                label="Lepas member dari transaksi"
+                                icon={<X size={16} />}
+                                onClick={() => {
+                                    onSelectRedemption(null);
+                                    onSelectMember(null);
+                                }}
+                            />
                         </div>
-                        <IconButton
-                            label="Lepas member dari transaksi ini"
-                            icon={<X size={16} />}
-                            onClick={() => {
-                                onSelectRedemption(null);
-                                onSelectMember(null);
-                            }}
-                        />
+
+                        {isLoyaltyEnabled ? (
+                            <div className="flex items-center justify-between text-xs bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-1.5 text-amber-700 dark:text-amber-300">
+                                <span className="flex items-center gap-1 font-semibold">
+                                    <Star size={13} className="fill-current" />
+                                    Saldo Poin
+                                </span>
+                                <span className="font-mono-receipt font-bold">
+                                    {member.PointBalance} Poin
+                                </span>
+                            </div>
+                        ) : null}
                     </div>
                 ) : (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
                         <Button
                             variant="outlined"
-                            icon={<UserRound size={18} aria-hidden="true" />}
+                            icon={<UserRound size={16} aria-hidden="true" />}
                             onClick={() => {
                                 setSearchPhrase("");
                                 setListResult([]);
                                 setSearchError(null);
                                 setShowSearchDialog(true);
                             }}
+                            className="flex-1 text-xs"
                         >
-                            Pilih member
+                            Pilih Member
                         </Button>
                         <Button
                             variant="text"
-                            icon={<UserPlus size={18} aria-hidden="true" />}
+                            icon={<UserPlus size={16} aria-hidden="true" />}
                             onClick={() => {
                                 setNewPhone("");
                                 setNewName("");
                                 setRegisterError(null);
                                 setShowRegisterDialog(true);
                             }}
+                            className="text-xs"
                         >
-                            Daftar baru
+                            Daftar Baru
                         </Button>
                     </div>
                 )}
 
                 {member && isLoyaltyEnabled ? (
-                    <div className="mt-3">
-                        <p className="mb-2 text-label-small text-on-surface-variant">
-                            Tukar point{pointEarned > 0 ? `, transaksi ini menambah ${pointEarned} point` : ""}
-                        </p>
+                    <div className="mt-3 space-y-1.5">
+                        <div className="flex justify-between items-center text-xs text-on-surface-variant">
+                            <span className="font-medium">Tukar Poin Belanja</span>
+                            {pointEarned > 0 ? (
+                                <span className="text-[11px] text-secondary font-semibold">
+                                    +{pointEarned} Poin Baru
+                                </span>
+                            ) : null}
+                        </div>
 
                         {listRedemptionOption.length === 0 ? (
-                            <p className="text-label-small text-on-surface-variant">
-                                Belum ada aturan penukaran aktif. Admin dapat membuatnya di menu Penukaran point.
+                            <p className="text-[11px] text-on-surface-variant italic">
+                                Belum ada promo penukaran poin aktif.
                             </p>
                         ) : (
                             <div role="radiogroup" aria-label="Pilihan penukaran point" className="flex flex-col gap-1.5">
@@ -157,13 +176,13 @@ export function MemberPanel({
                                     aria-checked={!idPointRedemptionRule}
                                     onClick={() => onSelectRedemption(null)}
                                     className={[
-                                        "min-h-11 rounded-(--radius-control) border px-3 text-left text-label",
+                                        "min-h-9 rounded-lg border px-3 text-left text-xs font-medium transition-colors cursor-pointer",
                                         !idPointRedemptionRule
-                                            ? "border-primary bg-secondary-container text-on-secondary-container"
-                                            : "border-outline text-on-surface-variant hover:bg-on-surface/8",
+                                            ? "border-primary bg-primary text-white font-bold"
+                                            : "border-outline-variant bg-surface-lowest text-on-surface hover:bg-surface-muted",
                                     ].join(" ")}
                                 >
-                                    Tanpa penukaran
+                                    Tanpa Penukaran Poin
                                 </button>
 
                                 {listRedemptionOption.map((option) => (
@@ -175,19 +194,20 @@ export function MemberPanel({
                                         disabled={!option.IsAvailable}
                                         onClick={() => onSelectRedemption(option.IdPointRedemptionRule)}
                                         className={[
-                                            "min-h-11 rounded-(--radius-control) border px-3 py-1.5 text-left",
-                                            "disabled:cursor-not-allowed disabled:opacity-60",
+                                            "min-h-10 rounded-lg border px-3 py-1.5 text-left transition-colors",
+                                            "disabled:cursor-not-allowed disabled:opacity-50",
                                             idPointRedemptionRule === option.IdPointRedemptionRule
-                                                ? "border-primary bg-secondary-container text-on-secondary-container"
-                                                : "border-outline text-on-surface-variant hover:bg-on-surface/8",
+                                                ? "border-secondary bg-secondary text-white font-bold"
+                                                : "border-outline-variant bg-surface-lowest text-on-surface hover:bg-surface-muted cursor-pointer",
                                         ].join(" ")}
                                     >
-                                        <span className="block text-label">
-                                            {option.RuleName} · potongan {option.StrDiscountAmount}
-                                        </span>
-                                        <span className="block text-label-small">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-semibold">{option.RuleName}</span>
+                                            <span>-{option.StrDiscountAmount}</span>
+                                        </div>
+                                        <span className="block text-[11px] opacity-80">
                                             {option.IsAvailable
-                                                ? `${option.PointRequired} point`
+                                                ? `Gunakan ${option.PointRequired} poin`
                                                 : option.UnavailableReason}
                                         </span>
                                     </button>
@@ -200,8 +220,8 @@ export function MemberPanel({
 
             <Dialog
                 isOpen={showSearchDialog}
-                title="Pilih member"
-                description="Cari dengan nomor HP atau nama. Ketik minimal 3 karakter."
+                title="Pilih Member"
+                description="Cari pelanggan berdasarkan nama atau nomor HP."
                 onClose={() => setShowSearchDialog(false)}
                 actions={
                     <Button variant="text" onClick={() => setShowSearchDialog(false)}>
@@ -212,8 +232,9 @@ export function MemberPanel({
                 <div className="flex flex-col gap-3">
                     <div className="flex items-end gap-2">
                         <TextField
-                            label="Nomor HP atau nama"
+                            label="Nomor HP atau Nama"
                             autoFocus
+                            placeholder="Ketik minimal 3 huruf..."
                             containerClassName="flex-1"
                             value={searchPhrase}
                             onChange={(event) => setSearchPhrase(event.target.value)}
@@ -232,12 +253,12 @@ export function MemberPanel({
                     {searchError ? <ErrorAlert message={searchError} /> : null}
 
                     {!isSearching && !searchError && listResult.length === 0 && searchPhrase.length >= 3 ? (
-                        <p className="text-body text-on-surface-variant">
-                            Tidak ada member yang cocok. Gunakan tombol Daftar baru bila pelanggan belum terdaftar.
+                        <p className="text-body text-sm text-on-surface-variant py-2">
+                            Tidak ada member yang cocok. Anda dapat mendaftarkan member baru melalui tombol Daftar Baru.
                         </p>
                     ) : null}
 
-                    <ul className="flex flex-col gap-1">
+                    <ul className="flex flex-col gap-1.5 max-h-60 overflow-y-auto">
                         {listResult.map((result) => (
                             <li key={result.IdMember}>
                                 <button
@@ -246,15 +267,22 @@ export function MemberPanel({
                                         onSelectMember(result.IdMember);
                                         setShowSearchDialog(false);
                                     }}
-                                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-(--radius-control) border border-outline px-3 text-left hover:bg-on-surface/8"
+                                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-outline-variant bg-surface-lowest p-3 text-left hover:bg-surface-muted transition-colors cursor-pointer"
                                 >
-                                    <span>
-                                        <span className="block text-label text-on-surface">{result.MemberName}</span>
-                                        <span className="block text-label-small text-on-surface-variant">
-                                            {result.PhoneNumber}
-                                        </span>
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="size-8 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-xs">
+                                            {result.MemberName ? result.MemberName.charAt(0).toUpperCase() : "M"}
+                                        </div>
+                                        <div>
+                                            <span className="block text-sm font-semibold text-on-surface">{result.MemberName}</span>
+                                            <span className="block text-xs text-on-surface-variant font-mono-receipt">
+                                                {result.PhoneNumber}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span className="text-numeric font-semibold text-xs text-amber-600 dark:text-amber-400">
+                                        {result.PointBalance} Poin
                                     </span>
-                                    <span className="text-numeric text-label text-on-surface">{result.PointBalance} point</span>
                                 </button>
                             </li>
                         ))}
@@ -264,8 +292,8 @@ export function MemberPanel({
 
             <Dialog
                 isOpen={showRegisterDialog}
-                title="Daftar member baru"
-                description="Cukup nomor HP dan nama. Data lainnya dapat dilengkapi admin kemudian."
+                title="Daftar Member Baru"
+                description="Masukkan nomor HP dan nama pelanggan."
                 onClose={() => setShowRegisterDialog(false)}
                 actions={
                     <>
@@ -273,7 +301,7 @@ export function MemberPanel({
                             Batal
                         </Button>
                         <Button onClick={registerMember} isLoading={isRegistering}>
-                            Daftarkan
+                            Daftarkan Member
                         </Button>
                     </>
                 }
@@ -282,7 +310,7 @@ export function MemberPanel({
                     {registerError ? <ErrorAlert message={registerError} /> : null}
 
                     <TextField
-                        label="Nomor HP"
+                        label="Nomor Telepon (HP)"
                         type="tel"
                         inputMode="tel"
                         required
@@ -293,9 +321,9 @@ export function MemberPanel({
                     />
 
                     <TextField
-                        label="Nama member"
+                        label="Nama Lengkap"
                         required
-                        placeholder="Andi Wijaya"
+                        placeholder="Andi Pratama"
                         value={newName}
                         onChange={(event) => setNewName(event.target.value)}
                     />

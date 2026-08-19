@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { Boxes, Receipt, ShieldCheck, Store, TicketPercent, Users } from "lucide-react";
+import type { ComponentType } from "react";
 import { api } from "@/services/api";
 import { getAxiosErrorMessage } from "@/services/global.methods";
 import { useSnackbar } from "@/components/ui/Snackbar";
@@ -14,47 +16,47 @@ import { TextField } from "@/components/ui/TextField";
 import { Textarea } from "@/components/ui/Textarea";
 import type { QuerySystemSettingModel, UpdateSystemSettingModel } from "@/@dataLayer/system-setting.models";
 
-/**
- * Judul kelompok dalam Bahasa Indonesia beserta satu kalimat akibat perubahannya.
- * Kunci yang tidak terdaftar tetap tampil memakai nama kelompoknya sendiri, sehingga
- * kelompok baru dari seeder tidak pernah menghilang dari halaman.
- */
-const groupTitle: Record<string, { title: string; description: string }> = {
+interface GroupMeta {
+    title: string;
+    description: string;
+    icon: ComponentType<{ size?: number; className?: string }>;
+}
+
+const groupMetadata: Record<string, GroupMeta> = {
     store: {
-        title: "Identitas toko",
-        description: "Tampil pada header aplikasi, halaman masuk, dan kepala nota.",
+        title: "Identitas Toko",
+        description: "Tampil pada header aplikasi, struk belanja kasir, dan kartu login sistem.",
+        icon: Store,
     },
     receipt: {
-        title: "Isi nota",
-        description: "Baris tambahan yang ikut tercetak pada setiap nota penjualan.",
+        title: "Format Struk & Nota",
+        description: "Teks header dan footer tambahan yang dicetak pada setiap transaksi kasir.",
+        icon: Receipt,
     },
     member: {
-        title: "Member dan loyalty point",
-        description: "Menentukan apakah kasir dapat memilih member dan berapa point yang diberikan.",
+        title: "Member & Program Poin",
+        description: "Konfigurasi sistem loyalitas pelanggan, batas transaksi perolehan poin, dan rasio diskon.",
+        icon: Users,
     },
     voucher: {
-        title: "Voucher",
-        description: "Bila dimatikan, kode voucher ditolak di layar kasir meskipun masih berlaku.",
+        title: "Kupon & Voucher Diskon",
+        description: "Aktivasi fitur voucher promosi potongan belanja pada keranjang kasir.",
+        icon: TicketPercent,
     },
     inventory: {
-        title: "Persediaan",
-        description: "Menentukan apakah perubahan stok menunggu persetujuan supervisor lebih dulu.",
+        title: "Persetujuan Stok & Inventaris",
+        description: "Menentukan apakah penerimaan barang dan penyesuaian stok memerlukan persetujuan supervisor.",
+        icon: Boxes,
     },
     transaction: {
-        title: "Transaksi",
-        description: "Kebijakan pembatalan transaksi yang sudah selesai.",
+        title: "Kebijakan Transaksi Kasir",
+        description: "Aturan pembatalan nota (void) dan toleransi transaksi kasir.",
+        icon: ShieldCheck,
     },
 };
 
-/** Kelompok teks panjang memakai area teks, bukan satu baris. */
 const longTextKeys = ["store.address", "receipt.header", "receipt.footer", "receipt.return_policy", "receipt.thank_you"];
 
-/**
- * Kebijakan toko yang boleh diubah admin tanpa menyentuh kode (PRD bagian 37 dan 38).
- *
- * Disimpan per kelompok, bukan sekaligus satu halaman, supaya admin tahu persis bagian
- * mana yang baru saja berubah dan pesan kesalahan menunjuk ke kelompok yang benar.
- */
 export default function SystemSettingPage() {
     const { successNotify, errorNotify } = useSnackbar();
 
@@ -62,7 +64,8 @@ export default function SystemSettingPage() {
     const [initErrorMessage, setInitErrorMessage] = useState<string | null>(null);
     const [listSetting, setListSetting] = useState<QuerySystemSettingModel[]>([]);
     const [valueByKey, setValueByKey] = useState<Record<string, string>>({});
-    const [savingGroup, setSavingGroup] = useState<string | null>(null);
+    const [activeGroup, setActiveGroup] = useState<string>("store");
+    const [isSaving, setIsSaving] = useState(false);
 
     const loadInitData = useCallback(() => {
         return api
@@ -97,7 +100,7 @@ export default function SystemSettingPage() {
                 .map((x) => ({ SettingKey: x.SettingKey, SettingValue: valueByKey[x.SettingKey] ?? "" })),
         };
 
-        setSavingGroup(groupName);
+        setIsSaving(true);
 
         api.post<string>("/admin/system-setting/update-system-setting", model)
             .then((response) => {
@@ -105,83 +108,131 @@ export default function SystemSettingPage() {
                 loadInitData();
             })
             .catch((error) => errorNotify(getAxiosErrorMessage(error)))
-            .finally(() => setSavingGroup(null));
+            .finally(() => setIsSaving(false));
     };
 
-    // Urutan kelompok mengikuti daftar judul di atas, bukan abjad nama kunci, supaya
-    // pengaturan yang paling sering diubah berada paling atas. Kelompok yang belum punya
-    // judul tetap tampil, di urutan paling akhir.
-    const groupOrder = Object.keys(groupTitle);
+    const groupOrder = Object.keys(groupMetadata);
     const groupNames = [...new Set(listSetting.map((x) => x.GroupName))].sort(
         (left, right) =>
             (groupOrder.indexOf(left) + 1 || groupOrder.length + 1) -
             (groupOrder.indexOf(right) + 1 || groupOrder.length + 1),
     );
 
+    const currentGroupKey = groupNames.includes(activeGroup) ? activeGroup : groupNames[0] ?? "store";
+    const currentMeta = groupMetadata[currentGroupKey] ?? {
+        title: currentGroupKey,
+        description: "",
+        icon: Store,
+    };
+    const currentSettings = listSetting.filter((x) => x.GroupName === currentGroupKey);
+    const ActiveIcon = currentMeta.icon;
+
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 w-full">
             <PageHeader
-                title="Pengaturan sistem"
-                description="Kebijakan toko yang berlaku seketika setelah disimpan, tanpa perlu menjalankan ulang server."
+                title="Konfigurasi Sistem"
+                description="Pengaturan kebijakan operasional toko yang langsung aktif seketika setelah disimpan."
             />
 
-            {isLoading ? <LoadingSpinner label="Memuat pengaturan" /> : null}
+            {isLoading ? <LoadingSpinner label="Memuat konfigurasi sistem..." /> : null}
 
             {!isLoading && initErrorMessage ? <ErrorAlert message={initErrorMessage} onRetry={handleRefresh} /> : null}
 
             {!isLoading && !initErrorMessage && groupNames.length === 0 ? (
-                <Surface variant="outlined">
+                <Surface variant="outlined" className="w-full">
                     <EmptyDataAlert
                         title="Belum ada pengaturan yang dapat diubah"
-                        description="Daftar ini diisi seeder saat server dijalankan. Jalankan ulang server, lalu muat ulang halaman."
+                        description="Daftar ini diisi oleh seeder saat server pertama kali dijalankan."
                         action={<Button variant="outlined" onClick={handleRefresh}>Muat ulang</Button>}
                     />
                 </Surface>
             ) : null}
 
-            {!isLoading && !initErrorMessage
-                ? groupNames.map((groupName) => {
-                      const group = groupTitle[groupName] ?? { title: groupName, description: "" };
-                      const listGroupSetting = listSetting.filter((x) => x.GroupName === groupName);
-                      const isSaving = savingGroup === groupName;
+            {!isLoading && !initErrorMessage && groupNames.length > 0 ? (
+                <div className="flex flex-col md:flex-row gap-6 items-start w-full">
+                    {/* Panel Tab Navigasi Kategori (Kiri) */}
+                    <Surface variant="outlined" className="w-full md:w-72 shrink-0 p-2 overflow-hidden shadow-xs">
+                        <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0" aria-label="Kategori Pengaturan">
+                            {groupNames.map((groupName) => {
+                                const meta = groupMetadata[groupName] ?? {
+                                    title: groupName,
+                                    description: "",
+                                    icon: Store,
+                                };
+                                const Icon = meta.icon;
+                                const isActive = groupName === currentGroupKey;
 
-                      return (
-                          <Surface key={groupName} variant="outlined" className="max-w-3xl overflow-hidden">
-                              <form
-                                  noValidate
-                                  onSubmit={(event) => {
-                                      event.preventDefault();
-                                      onSubmit(groupName);
-                                  }}
-                              >
-                                  <div className="border-b border-outline-variant p-5">
-                                      <h2 className="text-title text-on-surface">{group.title}</h2>
-                                      {group.description ? (
-                                          <p className="mt-1 text-body text-on-surface-variant">{group.description}</p>
-                                      ) : null}
-                                  </div>
+                                return (
+                                    <button
+                                        key={groupName}
+                                        type="button"
+                                        onClick={() => setActiveGroup(groupName)}
+                                        className={[
+                                            "flex items-center gap-3 rounded-lg px-3.5 py-3 text-left transition-all duration-150 cursor-pointer shrink-0 md:shrink w-auto md:w-full",
+                                            isActive
+                                                ? "bg-slate-900 text-white font-bold shadow-xs dark:bg-slate-800"
+                                                : "text-on-surface-variant hover:bg-surface-muted hover:text-on-surface font-medium",
+                                        ].join(" ")}
+                                    >
+                                        <Icon size={18} className={isActive ? "text-white" : "text-on-surface-variant/80"} />
+                                        <span className="text-sm whitespace-nowrap md:whitespace-normal">{meta.title}</span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+                    </Surface>
 
-                                  <div className="flex flex-col gap-5 p-5">
-                                      {listGroupSetting.map((setting) => (
-                                          <SettingField
-                                              key={setting.SettingKey}
-                                              setting={setting}
-                                              value={valueByKey[setting.SettingKey] ?? ""}
-                                              onChange={(value) => setValue(setting.SettingKey, value)}
-                                          />
-                                      ))}
-                                  </div>
+                    {/* Panel Kartu Form Pengaturan Aktif (Kanan) */}
+                    <Surface variant="outlined" className="flex-1 w-full overflow-hidden shadow-xs">
+                        <form
+                            noValidate
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                onSubmit(currentGroupKey);
+                            }}
+                        >
+                            <div className="flex items-start gap-4 border-b border-outline-variant bg-surface-muted/60 p-5 sm:p-6">
+                                <div className="size-10 rounded-lg bg-surface-lowest border border-outline-variant flex items-center justify-center text-on-surface shrink-0 shadow-xs">
+                                    <ActiveIcon size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="font-heading font-bold text-title text-on-surface">{currentMeta.title}</h2>
+                                    {currentMeta.description ? (
+                                        <p className="mt-0.5 text-xs text-on-surface-variant">{currentMeta.description}</p>
+                                    ) : null}
+                                </div>
+                            </div>
 
-                                  <div className="flex justify-end border-t border-outline-variant p-4">
-                                      <Button type="submit" isLoading={isSaving}>
-                                          {isSaving ? "Menyimpan" : `Simpan ${group.title.toLowerCase()}`}
-                                      </Button>
-                                  </div>
-                              </form>
-                          </Surface>
-                      );
-                  })
-                : null}
+                            <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                                {currentSettings.map((setting) => (
+                                    <div
+                                        key={setting.SettingKey}
+                                        className={
+                                            longTextKeys.includes(setting.SettingKey) ||
+                                            setting.ValueType === "image" ||
+                                            setting.ValueType === "boolean"
+                                                ? "md:col-span-2"
+                                                : "col-span-1"
+                                        }
+                                    >
+                                        <SettingField
+                                            setting={setting}
+                                            value={valueByKey[setting.SettingKey] ?? ""}
+                                            onChange={(value) => setValue(setting.SettingKey, value)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-end border-t border-outline-variant bg-surface-muted/30 p-4 sm:p-5">
+                                <Button type="submit" isLoading={isSaving} className="shadow-xs">
+                                    {isSaving ? "Menyimpan..." : `Simpan ${currentMeta.title}`}
+                                </Button>
+                            </div>
+                        </form>
+                    </Surface>
+                </div>
+            ) : null}
         </div>
     );
 }
@@ -192,7 +243,6 @@ interface SettingFieldProps {
     onChange: (value: string) => void;
 }
 
-/** Kontrol input dipilih dari kolom ValueType, bukan ditebak dari nama kuncinya. */
 function SettingField({ setting, value, onChange }: SettingFieldProps) {
     const helperText = setting.Description ?? undefined;
 
@@ -239,6 +289,7 @@ function SettingField({ setting, value, onChange }: SettingFieldProps) {
             <Textarea
                 label={setting.DisplayName}
                 helperText={helperText}
+                rows={3}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
             />

@@ -3,13 +3,15 @@
 @import "./m3-theme.css";
 
 /*
- * Token sistem desain. `@theme inline` dipakai supaya utility Tailwind merujuk langsung
- * ke variabel M3, sehingga pergantian tema terang/gelap berlaku tanpa membangun ulang CSS.
+ * Token sistem desain Zenith Retail Pro / Modern Pro POS.
+ * `@theme inline` dipakai supaya utility Tailwind merujuk langsung ke variabel CSS.
  */
 @theme inline {
-    --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+    --font-sans: "Inter", "Inter Variable", system-ui, sans-serif;
+    --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
+    --font-mono: "Courier Prime", ui-monospace, monospace;
 
-    /* Kelas lebar jendela Material 3, dipakai untuk memilih bentuk navigasi. */
+    /* Breakpoint responsif Material Design 3 */
     --breakpoint-medium: 600px;
     --breakpoint-expanded: 840px;
     --breakpoint-large: 1200px;
@@ -63,100 +65,92 @@
     --color-inverse-surface: var(--md-inverse-surface);
     --color-inverse-on-surface: var(--md-inverse-on-surface);
 
-    /*
-     * Palet grafik. Bukan warna merek yang dipakai ulang, melainkan langkah warna
-     * tersendiri yang sudah lolos enam pemeriksaan: pita terang, ambang chroma,
-     * pemisahan buta warna protan dan deutan, ambang penglihatan normal, dan
-     * kontras terhadap latar. Urutannya tetap dan tidak pernah diputar.
-     */
+    /* Palet grafik SVG / Chart.js */
     --color-chart-1: var(--md-chart-1);
     --color-chart-2: var(--md-chart-2);
     --color-chart-3: var(--md-chart-3);
 
-    /* Skala sudut dibatasi empat nilai. Alasannya ada di DESIGN.md. */
+    /* Skala radius kontrol dan kartu */
     --radius-chip: 4px;
     --radius-control: 8px;
     --radius-card: 12px;
     --radius-panel: 16px;
 }
 
-/*
- * Peran tipografi M3 yang benar-benar dipakai. Peran `display` sengaja tidak ada
- * karena tidak ada layar yang membutuhkan teks sebesar itu.
- */
-/* Langkah grafik untuk mode terang, tervalidasi terhadap latar #f4fbfa. */
+/* Langkah warna grafik */
 :root {
-    --md-chart-1: #00918f;
-    --md-chart-2: #c2680a;
-    --md-chart-3: #6b4fbb;
+    --md-chart-1: #091426;
+    --md-chart-2: #10b981;
+    --md-chart-3: #f59e0b;
 }
 
-/* Mode gelap memakai langkah sendiri, bukan pembalikan otomatis, tervalidasi terhadap #0e1415. */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --md-chart-1: #00a3a0;
-        --md-chart-2: #cf7a28;
-        --md-chart-3: #8b78dd;
+        --md-chart-1: #38bdf8;
+        --md-chart-2: #34d399;
+        --md-chart-3: #fbbf24;
     }
 }
 
 :root[data-theme="dark"] {
-    --md-chart-1: #00a3a0;
-    --md-chart-2: #cf7a28;
-    --md-chart-3: #8b78dd;
+    --md-chart-1: #38bdf8;
+    --md-chart-2: #34d399;
+    --md-chart-3: #fbbf24;
 }
 
 :root[data-theme="light"] {
-    --md-chart-1: #00918f;
-    --md-chart-2: #c2680a;
-    --md-chart-3: #6b4fbb;
+    --md-chart-1: #091426;
+    --md-chart-2: #10b981;
+    --md-chart-3: #f59e0b;
 }
 
 @layer base {
     .text-headline {
+        font-family: var(--font-heading);
         font-size: 1.5rem;
         line-height: 2rem;
-        font-weight: 500;
-        letter-spacing: 0;
+        font-weight: 700;
+        letter-spacing: -0.01em;
     }
 
     .text-title {
-        font-size: 1rem;
+        font-family: var(--font-heading);
+        font-size: 1.125rem;
         line-height: 1.5rem;
         font-weight: 600;
-        letter-spacing: 0.009em;
+        letter-spacing: -0.005em;
     }
 
     .text-title-small {
-        font-size: 0.875rem;
-        line-height: 1.25rem;
+        font-family: var(--font-heading);
+        font-size: 0.9375rem;
+        line-height: 1.375rem;
         font-weight: 600;
-        letter-spacing: 0.007em;
     }
 
     .text-body {
+        font-family: var(--font-sans);
         font-size: 0.875rem;
         line-height: 1.375rem;
-        letter-spacing: 0.017em;
+        letter-spacing: 0.01em;
     }
 
     .text-label {
+        font-family: var(--font-sans);
         font-size: 0.875rem;
         line-height: 1.25rem;
-        font-weight: 500;
-        letter-spacing: 0.007em;
+        font-weight: 600;
     }
 
     .text-label-small {
+        font-family: var(--font-sans);
         font-size: 0.75rem;
         line-height: 1rem;
         font-weight: 500;
-        letter-spacing: 0.04em;
     }
 
     /*
-     * Motif identitas: setiap nominal dan kuantitas memakai angka tabular rata kanan,
-     * supaya kolom uang berbaris rapi dan selisihnya terlihat tanpa dibaca satu per satu.
+     * Angka tabular rata kanan untuk nominal uang dan kuantitas stok.
      */
     .text-numeric {
         font-variant-numeric: tabular-nums;
@@ -164,29 +158,50 @@
         text-align: right;
     }
 
-    html {
+    .font-mono-receipt {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+    }
+
+    html,
+    body,
+    #root {
+        min-height: 100vh;
+        min-height: 100dvh;
         background-color: var(--md-surface);
+        color: var(--md-on-surface);
     }
 
     body {
         margin: 0;
-        background-color: var(--md-surface);
-        color: var(--md-on-surface);
         font-family: var(--font-sans);
         -webkit-font-smoothing: antialiased;
     }
 
-    /* Fokus harus selalu terlihat. Outline bawaan diganti, bukan dihapus. */
+    /* Outline fokus aksesibel */
     :focus-visible {
         outline: 2px solid var(--md-primary);
         outline-offset: 2px;
-        border-radius: 2px;
+        border-radius: 4px;
     }
 
-    /*
-     * Saat mencetak, hanya area nota yang ikut tercetak. Navigasi, tombol, dan
-     * latar warna disingkirkan supaya struk keluar bersih di kertas termal.
-     */
+    /* Scrollbar halus */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: var(--md-outline-variant);
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--md-outline);
+    }
+
+    /* Cetak nota kasir */
     @media print {
         body * {
             visibility: hidden;
@@ -213,7 +228,6 @@
         }
     }
 
-    /* Menghormati preferensi pengurangan gerak pada tingkat aplikasi. */
     @media (prefers-reduced-motion: reduce) {
         *,
         *::before,

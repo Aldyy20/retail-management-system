@@ -125,6 +125,7 @@ public class ProductLookupModel
     public string UnitName { get; set; } = string.Empty;
     public decimal CostPrice { get; set; }
     public decimal SellingPrice { get; set; }
+    public string? PhotoFileName { get; set; }
 
     /// <summary>Stok pada gudang yang sedang dipilih. Nol bila produk belum pernah masuk.</summary>
     public int Stock { get; set; }

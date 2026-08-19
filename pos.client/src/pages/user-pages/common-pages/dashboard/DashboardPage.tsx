@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardCheck, Coins, Package, Receipt, TriangleAlert, Wallet } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Coins, Package, Receipt, TrendingUp, Wallet } from "lucide-react";
 import { useAuth } from "@/components/router/AuthContext";
 import { api } from "@/services/api";
 import { getAxiosErrorMessage, formatNumber } from "@/services/global.methods";
@@ -18,12 +18,8 @@ import { ROLE_ADMIN, ROLE_KARYAWAN, ROLE_OWNER, ROLE_SUPERVISOR } from "@/servic
 import type { DashboardModel } from "@/@dataLayer/dashboard.models";
 
 /**
- * Beranda seluruh role.
- *
- * Isinya disusun dari keputusan yang diambil tiap role, bukan dari kerangka dashboard
- * yang sama untuk semua orang: owner melihat uang dan tren, supervisor melihat antrean
- * keputusannya, admin melihat kesehatan data dan stok, karyawan melihat pekerjaannya.
- * Seluruh angka berasal dari database; tidak ada satu pun nilai contoh.
+ * Dashboard Utama Zenith Retail Pro.
+ * Menyesuaikan data metrik & grafik secara kontekstual menurut peran pengguna (Role).
  */
 export default function DashboardPage() {
     const { currentUser } = useAuth();
@@ -65,52 +61,64 @@ export default function DashboardPage() {
                 title={`Selamat datang, ${currentUser?.FullName ?? ""}`}
                 description={
                     isOwner
-                        ? "Ringkasan keuangan dan penjualan toko."
+                        ? "Ikhtisar eksekutif keuangan, penjualan harian, dan performa produk toko."
                         : isSupervisor
-                          ? "Antrean keputusan Anda dan aktivitas operasional hari ini."
+                          ? "Pusat persetujuan dan monitoring aktivitas operasional kasir."
                           : isAdmin
-                            ? "Kesehatan data, stok, dan aktivitas sistem."
-                            : "Ringkasan pekerjaan hari ini."
+                            ? "Status kesehatan data, stok gudang, dan konfigurasi sistem."
+                            : "Ringkasan transaksi dan tugas operasional hari ini."
                 }
             />
 
-            {isLoading ? <LoadingSpinner label="Memuat ringkasan" /> : null}
+            {isLoading ? <LoadingSpinner label="Memuat ringkasan dashboard..." /> : null}
 
             {!isLoading && errorMessage ? <ErrorAlert message={errorMessage} onRetry={handleRefresh} /> : null}
 
             {!isLoading && !errorMessage && data ? (
                 <>
-                    {/*
-                      * Supervisor memulai dari antrean persetujuan, karena itulah keputusan
-                      * yang hanya bisa diambil olehnya. Sisanya menyusul sebagai konteks.
-                      */}
+                    {/* Banner Khusus Supervisor: Antrean Keputusan Menunggu */}
                     {isSupervisor ? (
-                        <Surface variant="outlined" className="p-5">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <h2 className="text-title text-on-surface">Menunggu keputusan Anda</h2>
-                                    <p className="text-numeric text-[2rem] leading-tight font-semibold text-on-surface">
-                                        {data.Approval.PendingTotal}
+                        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 sm:p-6 shadow-xs">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-semibold text-xs uppercase tracking-wider">
+                                        <AlertTriangle size={16} />
+                                        <span>Menunggu Keputusan Anda</span>
+                                    </div>
+                                    <p className="font-heading font-extrabold text-3xl sm:text-4xl text-on-surface">
+                                        {data.Approval.PendingTotal} <span className="text-lg font-medium text-on-surface-variant">Dokumen</span>
                                     </p>
-                                    <p className="text-label-small text-on-surface-variant">
+                                    <p className="text-xs text-on-surface-variant">
                                         {data.Approval.PendingGoodsReceiving} barang masuk ·{" "}
                                         {data.Approval.PendingStockAdjustment} penyesuaian stok ·{" "}
-                                        {data.Approval.PendingVoidTransaction} pembatalan
+                                        {data.Approval.PendingVoidTransaction} pembatalan transaksi
                                     </p>
                                 </div>
 
                                 {data.Approval.PendingTotal > 0 ? (
-                                    <Button onClick={() => navigate("/supervisor/approval")}>Buka daftar persetujuan</Button>
-                                ) : null}
+                                    <Button
+                                        onClick={() => navigate("/supervisor/approval")}
+                                        icon={<ClipboardCheck size={18} />}
+                                        className="shadow-sm"
+                                    >
+                                        Buka Pusat Persetujuan
+                                    </Button>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-secondary bg-surface-lowest px-3 py-2 rounded-xl border border-secondary/20">
+                                        <CheckCircle2 size={16} />
+                                        <span>Semua Permintaan Sudah Diputuskan</span>
+                                    </div>
+                                )}
                             </div>
-                        </Surface>
+                        </div>
                     ) : null}
 
-                    <div className="grid gap-4 medium:grid-cols-2 expanded:grid-cols-4">
+                    {/* 4 Kartu Metrik KPI Utama */}
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         <StatTile
-                            label={isOwner ? "Penjualan hari ini" : "Omzet hari ini"}
+                            label={isOwner ? "Penjualan Hari Ini" : "Omzet Hari Ini"}
                             value={data.Today.StrRevenue}
-                            caption={`${data.Today.TransactionCount} transaksi, ${formatNumber(data.Today.ItemSold)} barang`}
+                            caption={`${data.Today.TransactionCount} Transaksi · ${formatNumber(data.Today.ItemSold)} Item Terjual`}
                             icon={<Wallet size={16} aria-hidden="true" />}
                             isHero={isOwner}
                         />
@@ -118,22 +126,22 @@ export default function DashboardPage() {
                         {isOwner ? (
                             <>
                                 <StatTile
-                                    label="Laba kotor hari ini"
+                                    label="Laba Kotor Hari Ini"
                                     value={data.Today.StrGrossProfit}
                                     caption={`Margin ${data.Today.StrMargin}`}
                                     icon={<Coins size={16} aria-hidden="true" />}
                                 />
                                 <StatTile
-                                    label="Penjualan bulan ini"
+                                    label="Penjualan Bulan Ini"
                                     value={data.ThisMonth.StrRevenue}
-                                    caption={`Rata-rata ${data.ThisMonth.StrAverageTransactionValue} per transaksi`}
+                                    caption={`Rata-rata ${data.ThisMonth.StrAverageTransactionValue} / transaksi`}
                                     icon={<Receipt size={16} aria-hidden="true" />}
                                 />
                                 <StatTile
-                                    label="Laba kotor bulan ini"
+                                    label="Laba Kotor Bulan Ini"
                                     value={data.ThisMonth.StrGrossProfit}
-                                    caption={`Potongan diberikan ${data.ThisMonth.StrTotalDiscount}`}
-                                    icon={<Coins size={16} aria-hidden="true" />}
+                                    caption={`Total Diskon Diberikan ${data.ThisMonth.StrTotalDiscount}`}
+                                    icon={<TrendingUp size={16} aria-hidden="true" />}
                                 />
                             </>
                         ) : null}
@@ -141,43 +149,44 @@ export default function DashboardPage() {
                         {isAdmin || isSupervisor || isKaryawan ? (
                             <>
                                 <StatTile
-                                    label="Produk aktif"
+                                    label="Total Produk Aktif"
                                     value={formatNumber(data.Inventory.TotalProduct)}
-                                    caption={`Nilai persediaan ${data.Inventory.StrTotalStockValue}`}
+                                    caption={`Nilai Persediaan ${data.Inventory.StrTotalStockValue}`}
                                     icon={<Package size={16} aria-hidden="true" />}
                                 />
                                 <StatTile
-                                    label="Stok menipis"
+                                    label="Stok Menipis"
                                     value={formatNumber(data.Inventory.LowStockCount)}
-                                    caption="Sudah menyentuh batas minimum"
-                                    icon={<TriangleAlert size={16} aria-hidden="true" />}
+                                    caption="Menyentuh batas minimum"
+                                    icon={<AlertTriangle size={16} className="text-amber-500" aria-hidden="true" />}
                                 />
                                 <StatTile
-                                    label="Stok habis"
+                                    label="Stok Habis"
                                     value={formatNumber(data.Inventory.OutOfStockCount)}
-                                    caption="Tidak dapat dijual sampai barang masuk"
-                                    icon={<TriangleAlert size={16} aria-hidden="true" />}
+                                    caption="Segera buat barang masuk"
+                                    icon={<AlertTriangle size={16} className="text-error" aria-hidden="true" />}
                                 />
                             </>
                         ) : null}
 
                         {isAdmin ? (
                             <StatTile
-                                label="Menunggu persetujuan"
+                                label="Menunggu Persetujuan"
                                 value={formatNumber(data.Approval.PendingTotal)}
-                                caption="Ditangani supervisor"
+                                caption="Ditangani oleh supervisor"
                                 icon={<ClipboardCheck size={16} aria-hidden="true" />}
                             />
                         ) : null}
                     </div>
 
+                    {/* Grafik dan Laporan Khusus Owner */}
                     {isOwner ? (
                         <>
-                            <Surface variant="outlined" className="overflow-hidden">
+                            <Surface variant="outlined" className="overflow-hidden p-1">
                                 <TrendLineChart
-                                    question="Penjualan dan laba kotor 14 hari terakhir"
+                                    question="Tren Penjualan & Laba Kotor (14 Hari Terakhir)"
                                     primaryLabel="Penjualan"
-                                    secondaryLabel="Laba kotor"
+                                    secondaryLabel="Laba Kotor"
                                     points={data.ListDailySales.map((day) => ({
                                         label: day.StrShortDate,
                                         fullLabel: day.StrDate,
@@ -187,75 +196,77 @@ export default function DashboardPage() {
                                 />
                             </Surface>
 
-                            <div className="grid gap-6 large:grid-cols-2">
+                            <div className="grid gap-6 lg:grid-cols-2">
                                 <Surface variant="outlined">
                                     <RankedBarChart
-                                        question="Kategori mana yang paling banyak menghasilkan bulan ini"
-                                        emptyMessage="Belum ada penjualan bulan ini."
+                                        question="Pendapatan per Kategori Produk Bulan Ini"
+                                        emptyMessage="Belum ada data transaksi bulan ini."
                                         bars={data.ListCategorySales.map((category) => ({
                                             label: category.CategoryName,
                                             value: category.Revenue,
-                                            caption: `${formatNumber(category.ItemSold)} barang terjual`,
+                                            caption: `${formatNumber(category.ItemSold)} item terjual`,
                                         }))}
                                     />
                                 </Surface>
 
                                 <Surface variant="outlined">
                                     <RankedBarChart
-                                        question="Kasir mana yang paling banyak melayani bulan ini"
+                                        question="Performa Transaksi Kasir Bulan Ini"
                                         emptyMessage="Belum ada transaksi bulan ini."
                                         bars={data.ListCashierSales.map((cashier) => ({
                                             label: cashier.CashierName,
                                             value: cashier.Revenue,
-                                            caption: `${cashier.TransactionCount} transaksi`,
+                                            caption: `${cashier.TransactionCount} transaksi selesai`,
                                         }))}
                                     />
                                 </Surface>
                             </div>
 
                             <Surface variant="outlined" className="overflow-hidden">
-                                <h2 className="border-b border-outline-variant px-5 py-4 text-title text-on-surface">
-                                    Produk paling laku bulan ini
-                                </h2>
+                                <div className="border-b border-outline-variant px-5 py-4 bg-surface-muted/60">
+                                    <h2 className="font-heading font-bold text-title text-on-surface">
+                                        Produk Terlaris Bulan Ini
+                                    </h2>
+                                </div>
 
                                 {data.ListTopProduct.length === 0 ? (
                                     <EmptyDataAlert
                                         title="Belum ada penjualan bulan ini"
-                                        description="Peringkat produk muncul setelah ada transaksi yang tersimpan pada bulan berjalan."
+                                        description="Peringkat produk terlaris akan muncul otomatis setelah transaksi tersimpan."
                                     />
                                 ) : (
                                     <div className="overflow-x-auto">
                                         <table className="w-full min-w-[36rem] border-collapse text-left">
-                                            <thead className="border-b border-outline-variant bg-surface-low">
+                                            <thead className="border-b border-outline-variant bg-surface-muted/70">
                                                 <tr>
-                                                    <th scope="col" className="px-5 py-3 text-label-small text-on-surface-variant">
+                                                    <th scope="col" className="px-5 py-3 text-label-small font-semibold text-on-surface-variant">
                                                         Produk
                                                     </th>
-                                                    <th scope="col" className="px-5 py-3 text-right text-label-small text-on-surface-variant">
+                                                    <th scope="col" className="px-5 py-3 text-right text-label-small font-semibold text-on-surface-variant">
                                                         Terjual
                                                     </th>
-                                                    <th scope="col" className="px-5 py-3 text-right text-label-small text-on-surface-variant">
+                                                    <th scope="col" className="px-5 py-3 text-right text-label-small font-semibold text-on-surface-variant">
                                                         Penjualan
                                                     </th>
-                                                    <th scope="col" className="px-5 py-3 text-right text-label-small text-on-surface-variant">
-                                                        Laba kotor
+                                                    <th scope="col" className="px-5 py-3 text-right text-label-small font-semibold text-on-surface-variant">
+                                                        Laba Kotor
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-outline-variant">
                                                 {data.ListTopProduct.map((product) => (
-                                                    <tr key={product.Sku}>
-                                                        <td className="px-5 py-3">
-                                                            <p className="text-body text-on-surface">{product.ProductName}</p>
-                                                            <p className="text-label-small text-on-surface-variant">{product.Sku}</p>
+                                                    <tr key={product.Sku} className="hover:bg-surface-muted/40 transition-colors">
+                                                        <td className="px-5 py-3.5">
+                                                            <p className="font-heading font-semibold text-sm text-on-surface">{product.ProductName}</p>
+                                                            <p className="text-xs font-mono-receipt text-on-surface-variant">{product.Sku}</p>
                                                         </td>
-                                                        <td className="px-5 py-3 text-numeric text-body text-on-surface-variant">
+                                                        <td className="px-5 py-3.5 text-numeric font-mono-receipt text-sm text-on-surface-variant">
                                                             {formatNumber(product.ItemSold)}
                                                         </td>
-                                                        <td className="px-5 py-3 text-numeric text-body text-on-surface">
+                                                        <td className="px-5 py-3.5 text-numeric font-semibold text-sm text-on-surface">
                                                             {product.StrRevenue}
                                                         </td>
-                                                        <td className="px-5 py-3 text-numeric text-body text-on-surface">
+                                                        <td className="px-5 py-3.5 text-numeric font-bold text-sm text-secondary">
                                                             {product.StrGrossProfit}
                                                         </td>
                                                     </tr>
@@ -268,26 +279,31 @@ export default function DashboardPage() {
                         </>
                     ) : null}
 
-                    <div className="grid gap-6 large:grid-cols-2">
+                    {/* Bento Grid: Stok Kritis & Aktivitas Terakhir */}
+                    <div className="grid gap-6 lg:grid-cols-2">
                         <Surface variant="outlined" className="overflow-hidden">
-                            <h2 className="border-b border-outline-variant px-5 py-4 text-title text-on-surface">
-                                Barang yang perlu segera dipesan
-                            </h2>
+                            <div className="border-b border-outline-variant px-5 py-4 bg-surface-muted/60">
+                                <h2 className="font-heading font-bold text-title text-on-surface">
+                                    Peringatan Stok Kritis
+                                </h2>
+                            </div>
 
                             {data.ListLowStock.length === 0 ? (
-                                <EmptyDataAlert
-                                    title="Tidak ada stok kritis"
-                                    description="Seluruh produk aktif masih di atas batas minimumnya. Daftar ini terisi begitu ada yang menyentuh batas."
-                                />
+                                <div className="p-8 text-center text-on-surface-variant flex flex-col items-center justify-center">
+                                    <CheckCircle2 size={32} className="text-secondary mb-2 opacity-80" />
+                                    <p className="font-heading font-semibold text-sm text-on-surface">Seluruh Stok Aman</p>
+                                    <p className="text-xs text-on-surface-variant mt-0.5">
+                                        Semua produk aktif berada di atas batas minimum persediaan.
+                                    </p>
+                                </div>
                             ) : (
                                 <ul className="divide-y divide-outline-variant">
                                     {data.ListLowStock.map((row) => (
-                                        <li key={row.Sku} className="flex items-center justify-between gap-3 px-5 py-3">
+                                        <li key={row.Sku} className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-surface-muted/30 transition-colors">
                                             <div className="min-w-0">
-                                                <p className="text-body text-on-surface">{row.ProductName}</p>
-                                                <p className="text-label-small text-on-surface-variant">
-                                                    Sisa {formatNumber(row.Quantity)} {row.UnitName}, batas minimum{" "}
-                                                    {formatNumber(row.MinimumStock)}
+                                                <p className="font-heading font-semibold text-sm text-on-surface">{row.ProductName}</p>
+                                                <p className="text-xs text-on-surface-variant font-mono-receipt">
+                                                    Sisa {formatNumber(row.Quantity)} {row.UnitName} (Min: {formatNumber(row.MinimumStock)})
                                                 </p>
                                             </div>
                                             <StatusPill
@@ -301,33 +317,35 @@ export default function DashboardPage() {
                         </Surface>
 
                         <Surface variant="outlined" className="overflow-hidden">
-                            <h2 className="border-b border-outline-variant px-5 py-4 text-title text-on-surface">
-                                Aktivitas terakhir
-                            </h2>
+                            <div className="border-b border-outline-variant px-5 py-4 bg-surface-muted/60">
+                                <h2 className="font-heading font-bold text-title text-on-surface">
+                                    Aktivitas Terakhir Sistem
+                                </h2>
+                            </div>
 
                             {data.ListActivity.length === 0 ? (
                                 <EmptyDataAlert
                                     title="Belum ada aktivitas tercatat"
-                                    description="Setiap tindakan penting muncul di sini lengkap dengan pelakunya dan waktunya."
+                                    description="Tindakan transaksi dan perubahan data penting akan muncul di sini."
                                 />
                             ) : (
                                 <ul className="divide-y divide-outline-variant">
                                     {data.ListActivity.map((activity, index) => (
                                         <li
                                             key={activity.StrDateCreated + index}
-                                            className="flex flex-col gap-1 px-5 py-3 medium:flex-row medium:items-center medium:justify-between"
+                                            className="flex flex-col gap-1 px-5 py-3.5 hover:bg-surface-muted/30 transition-colors sm:flex-row sm:items-center sm:justify-between"
                                         >
                                             <div className="min-w-0">
-                                                <p className="text-title-small text-on-surface">
+                                                <p className="font-heading font-semibold text-sm text-on-surface">
                                                     {activity.Description ?? activity.ActionName}
                                                 </p>
-                                                <p className="text-label-small text-on-surface-variant">
-                                                    {activity.ModuleName} · {activity.CreatedBy}
+                                                <p className="text-xs text-on-surface-variant">
+                                                    <span className="font-medium text-primary">{activity.ModuleName}</span> · {activity.CreatedBy}
                                                 </p>
                                             </div>
-                                            <p className="shrink-0 text-label-small text-on-surface-variant">
+                                            <span className="shrink-0 text-[11px] font-mono-receipt text-on-surface-variant">
                                                 {activity.StrDateCreated}
-                                            </p>
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>

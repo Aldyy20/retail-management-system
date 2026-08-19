@@ -12,8 +12,8 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "cl
 }
 
 /**
- * Outlined text field M3. Kesalahan ditandai dengan warna sekaligus teks penjelas,
- * dan teks itu ditautkan ke input lewat aria-describedby supaya terbaca pembaca layar.
+ * Outlined text field Zenith Retail Pro.
+ * Border 1px halus, radius 8px, dan transisi fokus yang jelas.
  */
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
     { label, helperText, errorText, leadingIcon, trailingSlot, containerClassName = "", id, required, ...rest },
@@ -27,22 +27,21 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
 
     return (
         <div className={containerClassName}>
-            <label htmlFor={inputId} className="mb-1.5 block text-label-small text-on-surface-variant">
+            <label htmlFor={inputId} className="mb-1.5 block text-label-small font-medium text-on-surface">
                 {label}
                 {required ? <span className="text-error"> *</span> : null}
             </label>
 
             <div
                 className={[
-                    "flex items-center gap-2 rounded-(--radius-control) border bg-surface px-3",
-                    "focus-within:outline focus-within:outline-2 focus-within:outline-offset-0",
+                    "flex items-center gap-2 rounded-(--radius-control) border bg-surface-lowest px-3 transition-shadow",
                     hasError
-                        ? "border-error focus-within:outline-error"
-                        : "border-outline focus-within:border-primary focus-within:outline-primary",
+                        ? "border-error focus-within:ring-2 focus-within:ring-error/20 focus-within:border-error"
+                        : "border-outline-variant focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
                 ].join(" ")}
             >
                 {leadingIcon ? (
-                    <span aria-hidden="true" className="text-on-surface-variant">
+                    <span aria-hidden="true" className="text-on-surface-variant flex shrink-0 items-center">
                         {leadingIcon}
                     </span>
                 ) : null}
@@ -54,7 +53,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
                     required={required}
                     aria-invalid={hasError || undefined}
                     aria-describedby={message ? messageId : undefined}
-                    className="min-h-11 w-full bg-transparent text-body text-on-surface outline-none placeholder:text-on-surface-variant/70 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-h-11 w-full bg-transparent text-body text-on-surface outline-none placeholder:text-on-surface-variant/60 disabled:cursor-not-allowed disabled:opacity-50"
                 />
 
                 {trailingSlot}

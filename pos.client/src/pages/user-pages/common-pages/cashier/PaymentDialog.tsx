@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CheckCircle2, CreditCard, DollarSign, Wallet } from "lucide-react";
 import { api } from "@/services/api";
 import { useRolePath } from "@/hooks/useRolePath";
 import { getAxiosErrorMessage, formatMoney } from "@/services/global.methods";
@@ -21,8 +22,7 @@ interface PaymentDialogProps {
     onPaid: (idTransaction: string, invoiceNumber: string) => void;
 }
 
-/** Pecahan uang yang sering diterima kasir, untuk mempercepat pengisian. */
-const quickAmounts = [5000, 10000, 20000, 50000, 100000];
+const quickAmounts = [10000, 20000, 50000, 100000, 200000, 500000];
 
 export function PaymentDialog({
     isOpen,
@@ -85,16 +85,22 @@ export function PaymentDialog({
     return (
         <Dialog
             isOpen={isOpen}
-            title="Pembayaran"
-            description={`Total belanja ${cart.StrTotalAmount} untuk ${cart.TotalQuantity} barang.`}
+            title="Penyelesaian Pembayaran"
+            description={`Total tagihan belanja: ${cart.StrTotalAmount} (${cart.TotalQuantity} item)`}
             onClose={onClose}
             actions={
                 <>
                     <Button variant="text" onClick={onClose} disabled={isSubmitting}>
                         Batal
                     </Button>
-                    <Button onClick={saveTransaction} isLoading={isSubmitting} disabled={!isPaidEnough}>
-                        {isSubmitting ? "Menyimpan" : "Selesaikan"}
+                    <Button
+                        onClick={saveTransaction}
+                        isLoading={isSubmitting}
+                        disabled={!isPaidEnough}
+                        icon={<CheckCircle2 size={18} />}
+                        className="px-6 shadow-md"
+                    >
+                        {isSubmitting ? "Memproses Transaksi..." : "Selesaikan Pembayaran"}
                     </Button>
                 </>
             }
@@ -102,71 +108,103 @@ export function PaymentDialog({
             <div className="flex flex-col gap-4">
                 {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
 
+                {/* Pilihan Metode Pembayaran */}
                 {listPaymentMethod.length > 1 ? (
-                    <div role="radiogroup" aria-label="Metode pembayaran" className="flex flex-wrap gap-2">
-                        {listPaymentMethod.map((method) => (
-                            <button
-                                key={method.PaymentMethodCode}
-                                type="button"
-                                role="radio"
-                                aria-checked={paymentMethodCode === method.PaymentMethodCode}
-                                onClick={() => setPaymentMethodCode(method.PaymentMethodCode)}
-                                className={[
-                                    "min-h-11 rounded-(--radius-control) border px-4 text-label",
-                                    paymentMethodCode === method.PaymentMethodCode
-                                        ? "border-primary bg-secondary-container text-on-secondary-container"
-                                        : "border-outline text-on-surface-variant hover:bg-on-surface/8",
-                                ].join(" ")}
-                            >
-                                {method.PaymentMethodName}
-                            </button>
-                        ))}
+                    <div>
+                        <label className="block text-label-small font-medium text-on-surface mb-2">
+                            Metode Pembayaran
+                        </label>
+                        <div role="radiogroup" aria-label="Metode pembayaran" className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {listPaymentMethod.map((method) => {
+                                const isSelected = paymentMethodCode === method.PaymentMethodCode;
+                                return (
+                                    <button
+                                        key={method.PaymentMethodCode}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={isSelected}
+                                        onClick={() => setPaymentMethodCode(method.PaymentMethodCode)}
+                                        className={[
+                                            "flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer",
+                                            isSelected
+                                                ? "border-primary bg-primary text-white shadow-xs"
+                                                : "border-outline-variant bg-surface-lowest text-on-surface hover:bg-surface-muted",
+                                        ].join(" ")}
+                                    >
+                                        {method.PaymentMethodCode.toLowerCase().includes("cash") || method.PaymentMethodCode.toLowerCase().includes("tunai") ? (
+                                            <DollarSign size={16} />
+                                        ) : method.PaymentMethodCode.toLowerCase().includes("qris") || method.PaymentMethodCode.toLowerCase().includes("wallet") ? (
+                                            <Wallet size={16} />
+                                        ) : (
+                                            <CreditCard size={16} />
+                                        )}
+                                        <span className="truncate">{method.PaymentMethodName}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 ) : null}
 
                 {requiresChange ? (
-                    <>
+                    <div className="space-y-3 pt-2">
                         <TextField
-                            label="Uang diterima"
+                            label="Jumlah Uang Diterima"
                             type="number"
                             inputMode="numeric"
                             min={0}
                             autoFocus
+                            placeholder="0"
                             value={paidAmount}
                             onChange={(event) => setPaidAmount(event.target.value)}
-                            helperText="Isi jumlah uang yang diterima dari pembeli."
                         />
 
-                        <div className="flex flex-wrap gap-2">
-                            <Button variant="outlined" onClick={() => setPaidAmount(String(cart.TotalAmount))}>
-                                Uang pas
-                            </Button>
+                        {/* Tombol Cepat Pecahan Uang */}
+                        <div className="flex flex-wrap gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => setPaidAmount(String(cart.TotalAmount))}
+                                className="px-2.5 py-1 rounded-lg border border-outline-variant bg-surface-lowest text-xs font-semibold text-primary hover:bg-surface-muted transition-colors cursor-pointer"
+                            >
+                                Uang Pas
+                            </button>
                             {quickAmounts
                                 .filter((amount) => amount >= cart.TotalAmount)
-                                .slice(0, 3)
+                                .slice(0, 4)
                                 .map((amount) => (
-                                    <Button key={amount} variant="outlined" onClick={() => setPaidAmount(String(amount))}>
+                                    <button
+                                        key={amount}
+                                        type="button"
+                                        onClick={() => setPaidAmount(String(amount))}
+                                        className="px-2.5 py-1 rounded-lg border border-outline-variant bg-surface-lowest text-xs font-semibold text-on-surface hover:bg-surface-muted transition-colors cursor-pointer"
+                                    >
                                         {formatMoney(amount)}
-                                    </Button>
+                                    </button>
                                 ))}
                         </div>
 
-                        <dl className="flex items-baseline justify-between gap-4 rounded-(--radius-control) bg-surface-container px-4 py-3">
-                            <dt className="text-title text-on-surface">Kembalian</dt>
-                            <dd className="text-numeric text-headline text-on-surface">
+                        {/* Kotak Kembalian */}
+                        <div className="rounded-xl border border-secondary/30 bg-secondary/10 p-3.5 flex items-center justify-between">
+                            <div>
+                                <span className="text-xs font-semibold text-secondary block">Kembalian</span>
+                                <span className="text-[11px] text-on-surface-variant">
+                                    {isPaidEnough ? "Uang kembalian ke pelanggan" : "Uang belum cukup"}
+                                </span>
+                            </div>
+                            <span className="font-heading font-extrabold text-2xl text-secondary text-numeric">
                                 {formatMoney(change > 0 ? change : 0)}
-                            </dd>
-                        </dl>
-                    </>
+                            </span>
+                        </div>
+                    </div>
                 ) : (
-                    <p className="text-body text-on-surface-variant">
-                        Metode ini dibayar pas sejumlah {cart.StrTotalAmount}, jadi tidak ada kembalian.
-                    </p>
+                    <div className="p-4 rounded-xl bg-surface-muted border border-outline-variant text-xs text-on-surface-variant">
+                        Metode pembayaran ini tidak memerlukan kembalian tunai (Nominal pas: {cart.StrTotalAmount}).
+                    </div>
                 )}
 
                 <TextField
-                    label="Catatan"
-                    placeholder="Opsional"
+                    label="Catatan Transaksi (Opsional)"
+                    placeholder="Contoh: Meja 4 / Take Away"
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                 />

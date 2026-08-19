@@ -29,11 +29,11 @@ export default function TransactionPage() {
 
     return (
         <ListPageShell
-            title="Transaksi"
-            description="Riwayat penjualan beserta notanya. Nota lama tetap memakai harga saat transaksi terjadi."
-            searchPlaceholder="Cari nomor nota"
+            title="Riwayat Transaksi"
+            description="Daftar seluruh riwayat penjualan beserta detail notanya. Data lama mengunci harga saat transaksi terjadi."
+            searchPlaceholder="Cari nomor nota transaksi..."
             emptyTitle="Belum ada transaksi"
-            emptyDescription="Transaksi tercatat di sini setiap kali pembayaran di kasir diselesaikan."
+            emptyDescription="Data transaksi akan tercatat di sini setiap kali kasir menyelesaikan pembayaran."
             isLoading={list.isLoading}
             errorMessage={list.errorMessage}
             rowCount={list.listData.length}
@@ -44,19 +44,19 @@ export default function TransactionPage() {
             onPageSizeChange={list.setPageSizeOption}
         >
             <table className="w-full min-w-[52rem] border-collapse text-left">
-                <thead className="border-b border-outline-variant bg-surface-low">
+                <thead className="border-b border-outline-variant bg-surface-muted/70">
                     <tr>
-                        <ColumnSorting label="Nomor nota" sortKey="InvoiceNumber" {...sortProps} />
-                        <ColumnSorting label="Waktu" sortKey="TransactionDate" {...sortProps} />
-                        <ColumnSorting label="Barang" sortKey="TotalItem" alignRight {...sortProps} />
-                        <ColumnSorting label="Total" sortKey="TotalAmount" alignRight {...sortProps} />
-                        <th scope="col" className="px-4 py-3 text-label-small text-on-surface-variant">
-                            Pembayaran
+                        <ColumnSorting label="Nomor Nota" sortKey="InvoiceNumber" {...sortProps} />
+                        <ColumnSorting label="Waktu Transaksi" sortKey="TransactionDate" {...sortProps} />
+                        <ColumnSorting label="Jumlah Item" sortKey="TotalItem" alignRight {...sortProps} />
+                        <ColumnSorting label="Total Bayar" sortKey="TotalAmount" alignRight {...sortProps} />
+                        <th scope="col" className="px-4 py-3.5 text-label-small font-semibold text-on-surface-variant">
+                            Metode Bayar
                         </th>
-                        <th scope="col" className="px-4 py-3 text-label-small text-on-surface-variant">
+                        <th scope="col" className="px-4 py-3.5 text-label-small font-semibold text-on-surface-variant">
                             Status
                         </th>
-                        <th scope="col" className="px-4 py-3 text-right text-label-small text-on-surface-variant">
+                        <th scope="col" className="px-4 py-3.5 text-right text-label-small font-semibold text-on-surface-variant">
                             Aksi
                         </th>
                     </tr>
@@ -64,23 +64,27 @@ export default function TransactionPage() {
 
                 <tbody className="divide-y divide-outline-variant">
                     {list.listData.map((row) => (
-                        <tr key={row.IdTransaction} className="hover:bg-on-surface/4">
-                            <td className="px-4 py-3">
-                                <p className="text-body text-on-surface">{row.InvoiceNumber}</p>
+                        <tr key={row.IdTransaction} className="hover:bg-surface-muted/40 transition-colors">
+                            <td className="px-4 py-3.5">
+                                <p className="font-mono-receipt font-bold text-sm text-on-surface">{row.InvoiceNumber}</p>
                                 {row.CashierName ? (
-                                    <p className="text-label-small text-on-surface-variant">oleh {row.CashierName}</p>
+                                    <p className="text-xs text-on-surface-variant mt-0.5">Kasir: {row.CashierName}</p>
                                 ) : null}
                             </td>
-                            <td className="px-4 py-3 text-body text-on-surface-variant">{row.StrTransactionDate}</td>
-                            <td className="px-4 py-3 text-numeric text-body text-on-surface-variant">{row.TotalItem}</td>
-                            <td className="px-4 py-3 text-numeric text-body font-semibold text-on-surface">
+                            <td className="px-4 py-3.5 text-xs text-on-surface-variant font-mono-receipt">{row.StrTransactionDate}</td>
+                            <td className="px-4 py-3.5 text-numeric font-mono-receipt text-xs text-on-surface-variant">{row.TotalItem} item</td>
+                            <td className="px-4 py-3.5 text-numeric font-heading font-bold text-sm text-primary">
                                 {row.StrTotalAmount}
                             </td>
-                            <td className="px-4 py-3 text-body text-on-surface-variant">{row.PaymentMethodName}</td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3.5 text-xs text-on-surface-variant font-medium">
+                                <span className="px-2 py-0.5 rounded bg-surface-muted border border-outline-variant">
+                                    {row.PaymentMethodName}
+                                </span>
+                            </td>
+                            <td className="px-4 py-3.5">
                                 <StatusPill tone={getDocumentStatusTone(row.Status)} label={row.StrStatus} />
                             </td>
-                            <td className="px-4 py-2 text-right">
+                            <td className="px-4 py-3.5 text-right">
                                 <IconButton
                                     label={`Lihat nota ${row.InvoiceNumber}`}
                                     icon={<Eye size={16} />}

@@ -110,6 +110,7 @@ public abstract class BaseCashierApiController : BaseApiController
                             UnitName = product.Unit!.UnitName,
                             CostPrice = product.CostPrice,
                             SellingPrice = product.SellingPrice,
+                            PhotoFileName = product.PhotoFileName,
                             Stock = inventory != null ? inventory.Quantity : 0,
                         };
 

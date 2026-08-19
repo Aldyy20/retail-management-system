@@ -7,30 +7,42 @@ interface StatTileProps {
     /** Keterangan singkat yang menjelaskan asal angkanya. */
     caption?: string;
     icon?: ReactNode;
-    /** Menjadikan angka sebagai tokoh utama halaman. Dipakai maksimal sekali per layar. */
+    /** Menjadikan angka sebagai tokoh utama halaman. */
     isHero?: boolean;
 }
 
 /**
- * Satu angka beserta artinya.
- *
- * Dipakai menggantikan grafik satu batang: kalau datanya cuma satu nilai, angkanya
- * sendiri sudah menjadi grafiknya. Tidak ada indikator tren di sini, karena tren
- * hanya boleh muncul bila periode pembandingnya benar-benar ada dan disebutkan.
+ * Kartu Metrik KPI Zenith Retail Pro.
+ * Kartu putih bersih dengan icon container, nilai tabular besar, dan keterangan ringkas.
  */
 export function StatTile({ label, value, caption, icon, isHero = false }: StatTileProps) {
     return (
-        <div className="rounded-(--radius-card) border border-outline-variant bg-surface p-4">
-            <div className="flex items-center gap-2 text-on-surface-variant">
-                {icon}
-                <p className="text-label-small">{label}</p>
+        <div className="rounded-xl border border-outline-variant bg-surface-lowest p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-shadow hover:shadow-md">
+            <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs font-semibold text-on-surface-variant line-clamp-1">{label}</span>
+                    {icon ? (
+                        <div className="size-8 rounded-lg bg-surface-muted border border-outline-variant/60 flex items-center justify-center text-primary shrink-0">
+                            {icon}
+                        </div>
+                    ) : null}
+                </div>
+
+                <p
+                    className={[
+                        "font-heading font-extrabold text-numeric text-on-surface tracking-tight",
+                        isHero ? "text-2xl lg:text-3xl text-primary" : "text-xl lg:text-2xl",
+                    ].join(" ")}
+                >
+                    {value}
+                </p>
             </div>
 
-            <p className={`text-numeric mt-1 text-on-surface ${isHero ? "text-[2rem] leading-tight font-semibold" : "text-headline"}`}>
-                {value}
-            </p>
-
-            {caption ? <p className="mt-1 text-label-small text-on-surface-variant">{caption}</p> : null}
+            {caption ? (
+                <p className="mt-2 pt-2 border-t border-outline-variant/50 text-[11px] text-on-surface-variant line-clamp-1">
+                    {caption}
+                </p>
+            ) : null}
         </div>
     );
 }

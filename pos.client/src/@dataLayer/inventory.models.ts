@@ -84,6 +84,7 @@ export interface ProductLookupModel {
     UnitName: string;
     CostPrice: number;
     SellingPrice: number;
+    PhotoFileName: string | null;
     Stock: number;
     StrCostPrice: string;
     StrSellingPrice: string;

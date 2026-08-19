@@ -13,10 +13,6 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "cla
     containerClassName?: string;
 }
 
-/**
- * Pilihan tunggal dari daftar. Memakai select bawaan browser supaya keyboard,
- * pembaca layar, dan tampilan pada perangkat sentuh bekerja tanpa perlu ditiru ulang.
- */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
     { label, options, placeholder = "Pilih salah satu", helperText, errorText, containerClassName = "", id, required, ...rest },
     ref,
@@ -29,18 +25,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
 
     return (
         <div className={containerClassName}>
-            <label htmlFor={selectId} className="mb-1.5 block text-label-small text-on-surface-variant">
+            <label htmlFor={selectId} className="mb-1.5 block text-label-small font-medium text-on-surface">
                 {label}
                 {required ? <span className="text-error"> *</span> : null}
             </label>
 
             <div
                 className={[
-                    "relative flex items-center rounded-(--radius-control) border bg-surface",
-                    "focus-within:outline focus-within:outline-2",
+                    "relative flex items-center rounded-(--radius-control) border bg-surface-lowest transition-shadow",
                     hasError
-                        ? "border-error focus-within:outline-error"
-                        : "border-outline focus-within:border-primary focus-within:outline-primary",
+                        ? "border-error focus-within:ring-2 focus-within:ring-error/20 focus-within:border-error"
+                        : "border-outline-variant focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
                 ].join(" ")}
             >
                 <select
@@ -50,7 +45,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
                     required={required}
                     aria-invalid={hasError || undefined}
                     aria-describedby={message ? messageId : undefined}
-                    className="min-h-11 w-full appearance-none bg-transparent px-3 pr-10 text-body text-on-surface outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-h-11 w-full appearance-none bg-transparent px-3 pr-10 text-body text-on-surface outline-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <option value="">{placeholder}</option>
                     {options.map((option) => (

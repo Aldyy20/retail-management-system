@@ -8,13 +8,13 @@ interface SurfaceProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * Kontainer semantik. Hierarki rutin ditanggung peran surface, bukan bayangan.
- * Varian `elevated` hanya untuk elemen yang benar-benar melayang di atas konten lain.
+ * Kontainer semantik Zenith Retail Pro.
+ * Menggunakan kartu putih solid dengan 1px subtle border dan elevasi lembut.
  */
 const variantClass: Record<SurfaceVariant, string> = {
     filled: "bg-surface-container",
-    outlined: "bg-surface border border-outline-variant",
-    elevated: "bg-surface-low shadow-lg shadow-black/10",
+    outlined: "bg-surface-lowest border border-outline-variant shadow-sm",
+    elevated: "bg-surface-lowest border border-outline-variant shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),0_2px_4px_-2px_rgb(0,0,0,0.1)]",
 };
 
 export function Surface({ variant = "outlined", className = "", children, ...rest }: SurfaceProps) {

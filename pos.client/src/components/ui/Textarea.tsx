@@ -20,7 +20,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
 
     return (
         <div className={containerClassName}>
-            <label htmlFor={textareaId} className="mb-1.5 block text-label-small text-on-surface-variant">
+            <label htmlFor={textareaId} className="mb-1.5 block text-label-small font-medium text-on-surface">
                 {label}
                 {required ? <span className="text-error"> *</span> : null}
             </label>
@@ -34,11 +34,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
                 aria-invalid={hasError || undefined}
                 aria-describedby={message ? messageId : undefined}
                 className={[
-                    "w-full rounded-(--radius-control) border bg-surface px-3 py-2.5 text-body text-on-surface",
-                    "outline-none placeholder:text-on-surface-variant/70 disabled:cursor-not-allowed disabled:opacity-50",
+                    "w-full rounded-(--radius-control) border bg-surface-lowest px-3 py-2.5 text-body text-on-surface transition-shadow",
+                    "outline-none placeholder:text-on-surface-variant/60 disabled:cursor-not-allowed disabled:opacity-50",
                     hasError
-                        ? "border-error focus:outline focus:outline-2 focus:outline-error"
-                        : "border-outline focus:border-primary focus:outline focus:outline-2 focus:outline-primary",
+                        ? "border-error focus:ring-2 focus:ring-error/20 focus:border-error"
+                        : "border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20",
                 ].join(" ")}
             />
 

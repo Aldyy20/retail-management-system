@@ -15,10 +15,8 @@ interface DialogProps {
 }
 
 /**
- * Dialog M3 untuk keputusan yang memang layak menginterupsi.
- *
- * Fokus dipindahkan ke dalam dialog saat terbuka, dikurung selama terbuka, dan
- * dikembalikan ke pemicunya saat tertutup. Escape dan klik latar menutup dialog.
+ * Dialog Zenith Retail Pro.
+ * Panel modal putih solid dengan border halus dan elevasi tinggi.
  */
 export function Dialog({ isOpen, title, description, children, actions, onClose }: DialogProps) {
     const panelRef = useRef<HTMLDivElement>(null);
@@ -85,7 +83,7 @@ export function Dialog({ isOpen, title, description, children, actions, onClose 
 
     return (
         <div
-            className="fixed inset-0 z-40 flex items-end justify-center bg-scrim/50 p-4 medium:items-center"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/60 backdrop-blur-[2px] p-4 medium:items-center"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget) {
                     onClose();
@@ -98,9 +96,9 @@ export function Dialog({ isOpen, title, description, children, actions, onClose 
                 aria-modal="true"
                 aria-labelledby="dialog-title"
                 aria-describedby={description ? "dialog-description" : undefined}
-                className="w-full max-w-md rounded-(--radius-card) bg-surface-high p-6 shadow-xl shadow-black/25"
+                className="w-full max-w-lg rounded-(--radius-card) border border-outline-variant bg-surface-lowest p-6 shadow-2xl"
             >
-                <div className="mb-2 flex items-start justify-between gap-4">
+                <div className="mb-3 flex items-start justify-between gap-4">
                     <h2 id="dialog-title" className="text-title text-on-surface">
                         {title}
                     </h2>
@@ -108,14 +106,14 @@ export function Dialog({ isOpen, title, description, children, actions, onClose 
                 </div>
 
                 {description ? (
-                    <p id="dialog-description" className="text-body text-on-surface-variant">
+                    <p id="dialog-description" className="text-body text-on-surface-variant mb-4">
                         {description}
                     </p>
                 ) : null}
 
-                {children ? <div className="mt-4">{children}</div> : null}
+                {children ? <div className="mt-2">{children}</div> : null}
 
-                <div className="mt-6 flex flex-wrap justify-end gap-2">{actions}</div>
+                <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-outline-variant pt-4">{actions}</div>
             </div>
         </div>
     );

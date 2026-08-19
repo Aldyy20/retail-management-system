@@ -4,6 +4,11 @@ Berkas ini dimuat otomatis setiap sesi. Baca seluruhnya sebelum menyentuh kode.
 
 Bahasa percakapan dengan pengguna: **Bahasa Indonesia**.
 
+`SESSION-NOTES-2026-08-19.md` di root berisi serah terima sesi yang menutup Tahap 9
+sampai 12: keputusan yang diambil pengguna, cacat yang ditemukan saat verifikasi beserta
+perbaikannya, dan batas yang diketahui. Berkas ini tetap sumber kebenaran yang hidup;
+catatan sesi itu potret yang akan menua.
+
 ---
 
 ## 1. Apa yang sedang dibangun
