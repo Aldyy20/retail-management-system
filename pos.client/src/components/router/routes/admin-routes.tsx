@@ -39,6 +39,9 @@ const DiscountCreateEditPage = lazy(
 const VoucherPage = lazy(() => import("@/pages/user-pages/common-pages/voucher/VoucherPage"));
 const VoucherCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages/voucher/VoucherCreateEditPage"));
 
+// Report Pages
+const ReportPage = lazy(() => import("@/pages/user-pages/common-pages/report/ReportPage"));
+
 // Inventory Pages
 const InventoryPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/InventoryPage"));
 const StockMovementPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/StockMovementPage"));
@@ -96,6 +99,9 @@ export const adminRoutes: RouteObject[] = [
     { path: "voucher", element: <VoucherPage /> },
     { path: "voucher/create", element: <VoucherCreateEditPage /> },
     { path: "voucher/edit/:id", element: <VoucherCreateEditPage /> },
+
+    // Report Routes
+    { path: "report", element: <ReportPage /> },
 
     // Inventory Routes
     { path: "inventory", element: <InventoryPage /> },

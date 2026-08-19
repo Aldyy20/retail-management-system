@@ -63,6 +63,16 @@
     --color-inverse-surface: var(--md-inverse-surface);
     --color-inverse-on-surface: var(--md-inverse-on-surface);
 
+    /*
+     * Palet grafik. Bukan warna merek yang dipakai ulang, melainkan langkah warna
+     * tersendiri yang sudah lolos enam pemeriksaan: pita terang, ambang chroma,
+     * pemisahan buta warna protan dan deutan, ambang penglihatan normal, dan
+     * kontras terhadap latar. Urutannya tetap dan tidak pernah diputar.
+     */
+    --color-chart-1: var(--md-chart-1);
+    --color-chart-2: var(--md-chart-2);
+    --color-chart-3: var(--md-chart-3);
+
     /* Skala sudut dibatasi empat nilai. Alasannya ada di DESIGN.md. */
     --radius-chip: 4px;
     --radius-control: 8px;
@@ -74,6 +84,34 @@
  * Peran tipografi M3 yang benar-benar dipakai. Peran `display` sengaja tidak ada
  * karena tidak ada layar yang membutuhkan teks sebesar itu.
  */
+/* Langkah grafik untuk mode terang, tervalidasi terhadap latar #f4fbfa. */
+:root {
+    --md-chart-1: #00918f;
+    --md-chart-2: #c2680a;
+    --md-chart-3: #6b4fbb;
+}
+
+/* Mode gelap memakai langkah sendiri, bukan pembalikan otomatis, tervalidasi terhadap #0e1415. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --md-chart-1: #00a3a0;
+        --md-chart-2: #cf7a28;
+        --md-chart-3: #8b78dd;
+    }
+}
+
+:root[data-theme="dark"] {
+    --md-chart-1: #00a3a0;
+    --md-chart-2: #cf7a28;
+    --md-chart-3: #8b78dd;
+}
+
+:root[data-theme="light"] {
+    --md-chart-1: #00918f;
+    --md-chart-2: #c2680a;
+    --md-chart-3: #6b4fbb;
+}
+
 @layer base {
     .text-headline {
         font-size: 1.5rem;

@@ -1,17 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using POS.DataLayer.Services;
+using POS.DataLayer.Models;
 using POS.Server.Controllers.Api.v1.BaseApi;
 using POS.Server.Data;
-using POS.Server.Models;
 using POS.Server.Services;
 
 namespace POS.Server.Controllers.Api.v1;
 
 /// <summary>
-/// Ringkasan beranda. Isi yang ditampilkan berbeda per role akan dikembangkan
-/// bersama modulnya; untuk sekarang seluruh role melihat status sistem yang sama.
+/// Beranda tiap role.
+///
+/// Isinya berbeda karena tugasnya berbeda: admin melihat kesehatan data dan stok,
+/// supervisor melihat antrean persetujuan, owner melihat uang dan tren. Bagian yang
+/// tidak relevan tidak dikirim sama sekali, bukan dikirim kosong sebagai hiasan.
 /// </summary>
 [Authorize]
 [Route("api/v1/dashboard")]
@@ -25,36 +26,50 @@ public class DashboardApiController : BaseApiController
     [HttpPost("get-summary")]
     public async Task<IActionResult> GetSummaryAsync()
     {
-        List<DashboardActivityModel> recentActivities = await (
-            from log in _db.AuditLog
-            join user in _db.Users on log.CreatedById equals user.Id into userGroup
-            from user in userGroup.DefaultIfEmpty()
-            orderby log.DateCreated descending
-            select new DashboardActivityModel
-            {
-                ActionName = log.ActionName,
-                ModuleName = log.ModuleName,
-                Description = log.Description,
-                CreatedBy = user != null ? user.FullName : "Sistem",
-                StrDateCreated = string.Empty,
-                DateCreated = log.DateCreated,
-            })
-            .Take(8)
-            .ToListAsync();
+        string roleName = User.GetRoleName() ?? string.Empty;
+        DateTime today = DateTime.Now.Date;
 
-        foreach (DashboardActivityModel activity in recentActivities)
-        {
-            activity.StrDateCreated = ((DateTime?)activity.DateCreated).ToStrDateTime();
-        }
-
-        return Ok(new DashboardSummaryModel
+        DashboardModel result = new()
         {
             StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
-            TotalUserActive = await _db.Users.CountAsync(x => x.IsActive),
-            IsMemberEnabled = await GlobalList.GetSettingBoolAsync(_db, AppData.SettingMemberEnabled),
-            IsLoyaltyEnabled = await GlobalList.GetSettingBoolAsync(_db, AppData.SettingLoyaltyEnabled),
-            IsVoucherEnabled = await GlobalList.GetSettingBoolAsync(_db, AppData.SettingVoucherEnabled),
-            RecentActivities = recentActivities,
-        });
+            RoleName = roleName,
+            Today = await DashboardMethods.GetSalesSummaryAsync(_db, today, today),
+            ListActivity = await DashboardMethods.GetRecentActivityAsync(_db),
+        };
+
+        if (roleName == AppData.RoleNameAdmin)
+        {
+            result.Inventory = await DashboardMethods.GetInventorySummaryAsync(_db);
+            result.Approval = await DashboardMethods.GetApprovalSummaryAsync(_db);
+            result.ListLowStock = await DashboardMethods.GetLowStockAsync(_db);
+        }
+
+        if (roleName == AppData.RoleNameSupervisor)
+        {
+            result.Approval = await DashboardMethods.GetApprovalSummaryAsync(_db);
+            result.Inventory = await DashboardMethods.GetInventorySummaryAsync(_db);
+            result.ListLowStock = await DashboardMethods.GetLowStockAsync(_db, 5);
+            result.ListCashierSales = await DashboardMethods.GetCashierSalesAsync(_db, today, today);
+        }
+
+        if (roleName == AppData.RoleNameKaryawan)
+        {
+            result.ListLowStock = await DashboardMethods.GetLowStockAsync(_db, 5);
+        }
+
+        if (roleName == AppData.RoleNameOwner)
+        {
+            DateTime firstDayOfMonth = new(today.Year, today.Month, 1);
+
+            result.ThisMonth = await DashboardMethods.GetSalesSummaryAsync(_db, firstDayOfMonth, today);
+            result.ListDailySales = await DashboardMethods.GetDailySalesAsync(_db, today.AddDays(-13), today);
+            result.ListCategorySales = await DashboardMethods.GetCategorySalesAsync(_db, firstDayOfMonth, today);
+            result.ListTopProduct = await DashboardMethods.GetTopProductAsync(_db, firstDayOfMonth, today);
+            result.ListCashierSales = await DashboardMethods.GetCashierSalesAsync(_db, firstDayOfMonth, today);
+            result.Inventory = await DashboardMethods.GetInventorySummaryAsync(_db);
+            result.ListLowStock = await DashboardMethods.GetLowStockAsync(_db);
+        }
+
+        return Ok(result);
     }
 }

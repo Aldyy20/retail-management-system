@@ -12,7 +12,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import type { LoginRequestModel } from "@/@models/auth.models";
-import type { StoreInfoModel } from "@/@models/dashboard.models";
+import type { StoreInfoModel } from "@/@models/store.models";
 
 export default function LoginPage() {
     const { currentUser, login } = useAuth();

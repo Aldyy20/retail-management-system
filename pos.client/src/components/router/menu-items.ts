@@ -1,6 +1,7 @@
 import {
     ArrowLeftRight,
     BadgePercent,
+    ChartColumn,
     Coins,
     Receipt,
     TicketPercent,
@@ -62,6 +63,10 @@ const promoItems: MenuItem[] = [
     { path: "voucher", label: "Voucher", icon: TicketPercent },
 ];
 
+const reportItems: MenuItem[] = [
+    { path: "report", label: "Laporan", icon: ChartColumn, groupLabel: "Analisis" },
+];
+
 const stockViewItems: MenuItem[] = [
     { path: "inventory", label: "Stok", icon: ClipboardList, groupLabel: "Gudang" },
     { path: "stock-movement", label: "Riwayat stok", icon: ArrowLeftRight },
@@ -73,8 +78,8 @@ const stockOperationItems: MenuItem[] = [
 ];
 
 export const menuItemsByRole: Record<string, MenuItem[]> = {
-    [ROLE_ADMIN]: [dashboardItem, ...masterDataItems, ...loyaltyItems, ...promoItems, ...stockViewItems],
-    [ROLE_OWNER]: [dashboardItem],
+    [ROLE_ADMIN]: [dashboardItem, ...masterDataItems, ...loyaltyItems, ...promoItems, ...reportItems, ...stockViewItems],
+    [ROLE_OWNER]: [dashboardItem, ...reportItems, ...stockViewItems],
     [ROLE_SUPERVISOR]: [
         dashboardItem,
         { path: "approval", label: "Persetujuan", icon: ClipboardCheck, groupLabel: "Pengawasan" },
