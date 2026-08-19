@@ -1,5 +1,7 @@
 import {
     ArrowLeftRight,
+    Receipt,
+    ScanLine,
     ClipboardCheck,
     ClipboardList,
     LayoutDashboard,
@@ -41,6 +43,11 @@ const masterDataItems: MenuItem[] = [
     { path: "employee", label: "Pengguna", icon: Users },
 ];
 
+const cashierItems: MenuItem[] = [
+    { path: "cashier", label: "Kasir", icon: ScanLine, groupLabel: "Penjualan" },
+    { path: "transaction", label: "Transaksi", icon: Receipt },
+];
+
 const stockViewItems: MenuItem[] = [
     { path: "inventory", label: "Stok", icon: ClipboardList, groupLabel: "Gudang" },
     { path: "stock-movement", label: "Riwayat stok", icon: ArrowLeftRight },
@@ -57,10 +64,11 @@ export const menuItemsByRole: Record<string, MenuItem[]> = {
     [ROLE_SUPERVISOR]: [
         dashboardItem,
         { path: "approval", label: "Persetujuan", icon: ClipboardCheck, groupLabel: "Pengawasan" },
+        ...cashierItems,
         ...stockViewItems,
         ...stockOperationItems,
     ],
-    [ROLE_KARYAWAN]: [dashboardItem, ...stockViewItems, ...stockOperationItems],
+    [ROLE_KARYAWAN]: [dashboardItem, ...cashierItems, ...stockViewItems, ...stockOperationItems],
 };
 
 /** Prefix URL per role. Dipakai router dan seluruh panggilan API yang role-scoped. */

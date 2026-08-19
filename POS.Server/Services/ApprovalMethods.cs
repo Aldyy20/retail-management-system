@@ -60,6 +60,7 @@ public static class ApprovalMethods
         {
             AppData.ApprovalTypeGoodsReceiving => await ApplyGoodsReceivingAsync(db, request.ReferenceId, userId),
             AppData.ApprovalTypeStockAdjustment => await ApplyStockAdjustmentAsync(db, request.ReferenceId, userId),
+            AppData.ApprovalTypeVoidTransaction => await ApplyVoidTransactionAsync(db, request.ReferenceId, userId),
             _ => $"Jenis persetujuan {request.ApprovalTypeCode} belum memiliki penanganan di server.",
         };
     }
@@ -91,9 +92,68 @@ public static class ApprovalMethods
                 opname.Status = DataStatus.Rejected;
                 return null;
 
+            case AppData.ApprovalTypeVoidTransaction:
+                Transaction? transaction = await db.Transaction.FindAsync(request.ReferenceId);
+
+                if (transaction == null)
+                {
+                    return "Transaksi yang dirujuk tidak ditemukan.";
+                }
+
+                // Permintaan pembatalan yang ditolak mengembalikan transaksi ke keadaan
+                // semula, bukan membatalkannya. Stok tidak pernah berubah selama menunggu.
+                transaction.Status = DataStatus.Completed;
+                return null;
+
             default:
                 return $"Jenis persetujuan {request.ApprovalTypeCode} belum memiliki penanganan di server.";
         }
+    }
+
+    /// <summary>
+    /// Pembatalan transaksi yang disetujui mengembalikan stok yang sudah terlanjur keluar,
+    /// lalu menandai transaksinya void. Nota lama tidak dihapus supaya jejaknya tetap ada.
+    /// </summary>
+    public static async Task<string?> ApplyVoidTransactionAsync(ApplicationDbContext db, string idTransaction, string? userId)
+    {
+        Transaction? transaction = await db.Transaction
+            .Include(x => x.ListDetail)
+            .FirstOrDefaultAsync(x => x.IdTransaction == idTransaction);
+
+        if (transaction == null)
+        {
+            return "Transaksi yang dirujuk tidak ditemukan.";
+        }
+
+        if (transaction.Status == DataStatus.Void)
+        {
+            return "Transaksi ini sudah pernah dibatalkan.";
+        }
+
+        foreach (TransactionDetail detail in transaction.ListDetail)
+        {
+            string? errorMessage = await InventoryMethods.ApplyMovementAsync(
+                db,
+                detail.IdProduct,
+                transaction.IdWarehouse,
+                StockMovementType.ReturnIn,
+                detail.Quantity,
+                "Pembatalan Transaksi",
+                transaction.IdTransaction,
+                transaction.InvoiceNumber,
+                "Stok dikembalikan karena transaksi dibatalkan.",
+                userId);
+
+            if (errorMessage != null)
+            {
+                return errorMessage;
+            }
+        }
+
+        transaction.Status = DataStatus.Void;
+        transaction.ModifiedById = userId;
+        transaction.DateModified = DateTime.Now;
+        return null;
     }
 
     /// <summary>Barang masuk yang disetujui menambah stok gudang tujuan.</summary>

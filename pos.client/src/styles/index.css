@@ -145,6 +145,36 @@
         border-radius: 2px;
     }
 
+    /*
+     * Saat mencetak, hanya area nota yang ikut tercetak. Navigasi, tombol, dan
+     * latar warna disingkirkan supaya struk keluar bersih di kertas termal.
+     */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #area-nota,
+        #area-nota * {
+            visibility: visible;
+        }
+
+        #area-nota {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: none;
+            padding: 0;
+            background: #ffffff;
+            color: #000000;
+        }
+
+        @page {
+            margin: 8mm;
+        }
+    }
+
     /* Menghormati preferensi pengurangan gerak pada tingkat aplikasi. */
     @media (prefers-reduced-motion: reduce) {
         *,

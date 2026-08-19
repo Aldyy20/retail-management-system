@@ -23,9 +23,21 @@ const StockOpnameDetailsPage = lazy(
     () => import("@/pages/user-pages/common-pages/stock-opname/StockOpnameDetailsPage"),
 );
 
+// Cashier Pages
+const CashierPage = lazy(() => import("@/pages/user-pages/common-pages/cashier/CashierPage"));
+const TransactionPage = lazy(() => import("@/pages/user-pages/common-pages/transaction/TransactionPage"));
+const TransactionDetailsPage = lazy(
+    () => import("@/pages/user-pages/common-pages/transaction/TransactionDetailsPage"),
+);
+
 export const karyawanRoutes: RouteObject[] = [
     { path: "", element: <Navigate to="/karyawan/dashboard" replace /> },
     { path: "dashboard", element: <DashboardPage /> },
+
+    // Cashier Routes
+    { path: "cashier", element: <CashierPage /> },
+    { path: "transaction", element: <TransactionPage /> },
+    { path: "transaction/details/:id", element: <TransactionDetailsPage /> },
 
     // Inventory Routes
     { path: "inventory", element: <InventoryPage /> },

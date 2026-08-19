@@ -40,6 +40,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     #endregion
 
+    #region Penjualan
+
+    public DbSet<PaymentMethod> PaymentMethod => Set<PaymentMethod>();
+    public DbSet<Transaction> Transaction => Set<Transaction>();
+    public DbSet<TransactionDetail> TransactionDetail => Set<TransactionDetail>();
+
+    #endregion
+
     #region Approval
 
     public DbSet<ApprovalRequest> ApprovalRequest => Set<ApprovalRequest>();
@@ -97,6 +105,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         builder.ApplyConfiguration(new GoodsReceivingDetailConfiguration());
         builder.ApplyConfiguration(new StockOpnameConfiguration());
         builder.ApplyConfiguration(new StockOpnameDetailConfiguration());
+        builder.ApplyConfiguration(new PaymentMethodConfiguration());
+        builder.ApplyConfiguration(new TransactionConfiguration());
+        builder.ApplyConfiguration(new TransactionDetailConfiguration());
         builder.ApplyConfiguration(new ApprovalRequestConfiguration());
     }
 }

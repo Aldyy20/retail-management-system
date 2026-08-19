@@ -22,6 +22,31 @@ public static class DbInitializer
         await SeedRolesAsync(roleManager);
         await SeedAdminAsync(userManager, configuration);
         await SeedSystemSettingAsync(db);
+        await SeedPaymentMethodAsync(db);
+    }
+
+    /// <summary>
+    /// Metode pembayaran awal. Versi pertama hanya tunai, tetapi metode lain dapat
+    /// ditambahkan admin sebagai data tanpa mengubah kode (PRD bagian 26).
+    /// </summary>
+    private static async Task SeedPaymentMethodAsync(ApplicationDbContext db)
+    {
+        if (await db.PaymentMethod.AnyAsync())
+        {
+            return;
+        }
+
+        db.PaymentMethod.Add(new PaymentMethod
+        {
+            PaymentMethodCode = "CASH",
+            PaymentMethodName = "Tunai",
+            Description = "Pembayaran dengan uang tunai, sistem menghitung kembalian.",
+            RequiresChange = true,
+            SortOrder = 1,
+            IsActive = true,
+        });
+
+        await db.SaveChangesAsync();
     }
 
     private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager)
