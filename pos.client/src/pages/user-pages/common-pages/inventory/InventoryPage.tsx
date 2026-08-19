@@ -12,6 +12,9 @@ const stockStatusOptions = [
     { value: "", label: "Semua kondisi" },
     { value: "habis", label: "Habis" },
     { value: "menipis", label: "Menipis" },
+    // Gabungan habis dan menipis. Angkanya sama persis dengan penanda pada menu Stok,
+    // sehingga penanda itu selalu dapat ditelusuri ke barisnya.
+    { value: "perlu-dipesan", label: "Perlu dipesan ulang" },
     { value: "aman", label: "Aman" },
 ];
 

@@ -46,32 +46,7 @@ public class InventoryApiController : BaseApiController
             return BadRequest(AppErrorMessages.ErrorEmptyParameterWithName("model"));
         }
 
-        // Produk tanpa baris stok tetap muncul dengan nilai nol, supaya barang yang belum
-        // pernah masuk gudang tidak menghilang dari daftar.
-        var queryResult = from product in _db.Product
-                          from warehouse in _db.Warehouse.Where(x => x.IsActive)
-                          join inventory in _db.Inventory
-                              on new { product.IdProduct, warehouse.IdWarehouse }
-                              equals new { inventory.IdProduct, inventory.IdWarehouse } into inventoryGroup
-                          from inventory in inventoryGroup.DefaultIfEmpty()
-                          where product.IsActive
-                          select new QueryInventoryModel
-                          {
-                              IdInventory = inventory != null ? inventory.IdInventory : string.Empty,
-                              IdProduct = product.IdProduct,
-                              IdWarehouse = warehouse.IdWarehouse,
-                              Quantity = inventory != null ? inventory.Quantity : 0,
-                              DateModified = inventory != null ? inventory.DateModified : null,
-                              Sku = product.Sku,
-                              Barcode = product.Barcode,
-                              ProductName = product.ProductName,
-                              CategoryName = product.Category!.CategoryName,
-                              UnitName = product.Unit!.UnitName,
-                              WarehouseName = warehouse.WarehouseName,
-                              MinimumStock = product.MinimumStock,
-                              CostPrice = product.CostPrice,
-                              SellingPrice = product.SellingPrice,
-                          };
+        IQueryable<QueryInventoryModel> queryResult = BuildInventoryQuery();
 
         if (!string.IsNullOrWhiteSpace(model.IdWarehouse))
         {
@@ -83,6 +58,7 @@ public class InventoryApiController : BaseApiController
         {
             "habis" => queryResult.Where(x => x.Quantity <= 0),
             "menipis" => queryResult.Where(x => x.Quantity > 0 && x.Quantity <= x.MinimumStock),
+            "perlu-dipesan" => queryResult.Where(IsBelowMinimum),
             "aman" => queryResult.Where(x => x.Quantity > x.MinimumStock),
             _ => queryResult,
         };
@@ -167,4 +143,54 @@ public class InventoryApiController : BaseApiController
 
         return Ok(listData);
     }
+
+    /// <summary>
+    /// Jumlah baris stok yang berada di bawah atau tepat pada minimumnya, termasuk yang
+    /// sudah habis. Dipakai penanda navigasi admin (PRD bagian 35), jadi yang dikirim
+    /// hanya angkanya; daftarnya dibuka di halaman stok dengan penyaring "Perlu dipesan
+    /// ulang", yang memakai syarat yang sama persis supaya angkanya selalu cocok.
+    /// </summary>
+    [HttpPost("get-low-stock-count")]
+    public async Task<IActionResult> GetLowStockCountAsync()
+    {
+        return Ok(await BuildInventoryQuery().Where(IsBelowMinimum).CountAsync());
+    }
+
+    /// <summary>
+    /// Baris stok per produk per gudang aktif. Produk tanpa baris stok tetap muncul dengan
+    /// nilai nol, supaya barang yang belum pernah masuk gudang tidak menghilang dari daftar.
+    /// Dipakai bersama oleh daftar stok dan penghitung stok menipis, sehingga keduanya tidak
+    /// mungkin memakai definisi yang berbeda.
+    /// </summary>
+    private IQueryable<QueryInventoryModel> BuildInventoryQuery()
+    {
+        return from product in _db.Product
+               from warehouse in _db.Warehouse.Where(x => x.IsActive)
+               join inventory in _db.Inventory
+                   on new { product.IdProduct, warehouse.IdWarehouse }
+                   equals new { inventory.IdProduct, inventory.IdWarehouse } into inventoryGroup
+               from inventory in inventoryGroup.DefaultIfEmpty()
+               where product.IsActive
+               select new QueryInventoryModel
+               {
+                   IdInventory = inventory != null ? inventory.IdInventory : string.Empty,
+                   IdProduct = product.IdProduct,
+                   IdWarehouse = warehouse.IdWarehouse,
+                   Quantity = inventory != null ? inventory.Quantity : 0,
+                   DateModified = inventory != null ? inventory.DateModified : null,
+                   Sku = product.Sku,
+                   Barcode = product.Barcode,
+                   ProductName = product.ProductName,
+                   CategoryName = product.Category!.CategoryName,
+                   UnitName = product.Unit!.UnitName,
+                   WarehouseName = warehouse.WarehouseName,
+                   MinimumStock = product.MinimumStock,
+                   CostPrice = product.CostPrice,
+                   SellingPrice = product.SellingPrice,
+               };
+    }
+
+    /// <summary>Satu definisi "perlu dipesan ulang" untuk penyaring maupun penanda.</summary>
+    private static readonly System.Linq.Expressions.Expression<Func<QueryInventoryModel, bool>> IsBelowMinimum =
+        x => x.Quantity <= x.MinimumStock;
 }

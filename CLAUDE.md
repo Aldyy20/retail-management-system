@@ -72,7 +72,8 @@ Jangan ubah tanpa membicarakannya dengan pengguna.
    Laporan harian dikelompokkan menurut tanggal buka toko, bukan UTC.
 7. **Tidak ada tabel `stores`.** Konfigurasi toko masuk `system_settings` grup `store`.
 8. **Tidak ada tabel `payments` terpisah.** Satu pembayaran per transaksi, kolomnya
-   menempel di baris transaksi. Perlu dipisah bila nanti ada pembayaran gabungan.
+   menempel di baris transaksi. Pengguna menegaskan pembayaran gabungan dilarang di
+   toko ini, jadi bentuk ini final dan tidak akan dipisah.
 9. **Foto produk belum dibuat.** PRD menyebutnya field opsional dan tidak masuk
    acceptance criteria. Sudah disampaikan ke pengguna sebagai hal yang ditunda.
 10. **Bila satu produk terkena beberapa diskon aktif, dipakai potongan terbesar**,
@@ -269,7 +270,7 @@ checkpoint berisi judul dan keterangan commit untuk pengguna.
 | 6 | Member, loyalty point, aturan penukaran point | Selesai |
 | 7 | Diskon produk berperiode, voucher dengan kuota | Selesai |
 | 8 | Dashboard per role, lima laporan, grafik SVG dengan palet tervalidasi | Selesai |
-| 9 | Audit log, pengaturan sistem, penanda approval, hardening, uji logika kritis | Selesai |
+| 9 | Audit log, pengaturan sistem, penanda notifikasi, hardening, uji logika kritis | Selesai |
 
 Migrasi yang sudah diterapkan: `InitialFoundation`, `MasterData`,
 `PriceHistoryInitialFlag`, `InventoryAndApproval`, `SalesTransaction`,
@@ -306,13 +307,30 @@ penukaran point atomic, BR-009 transaksi atomic.
 Catatan uji: `GlobalList` memakai cache statis, jadi `AssemblyInfo.cs` mematikan
 paralelisasi xUnit dan `TestDb.Create` selalu memanggil `GlobalList.ClearSystemSetting()`.
 
+### Penanda notifikasi (PRD bagian 35)
+
+Satu mekanisme untuk seluruh role. Menu itu sendiri yang menyatakan jenis penandanya
+lewat `badgeKey`, dan `UserLayout` hanya memanggil endpoint untuk jenis yang benar-benar
+diminta menu role tersebut. Jadi role yang menunya tidak meminta penanda tidak memanggil
+apa pun. Angka dimuat ulang setiap berpindah halaman dan sekali per menit.
+
+| Role | Penanda | Endpoint |
+|---|---|---|
+| Supervisor | Persetujuan tertunda | `supervisor/approval/get-pending-count` |
+| Admin | Baris stok yang perlu dipesan ulang | `inventory/get-low-stock-count` |
+
+Owner dan Karyawan sengaja tidak diberi penanda: keduanya tidak memutuskan pembelian
+maupun persetujuan.
+
+Angka penanda admin memakai syarat yang sama persis dengan penyaring **Perlu dipesan
+ulang** pada halaman stok (`Quantity <= MinimumStock`, mencakup habis dan menipis), dan
+keduanya membaca `BuildInventoryQuery()` yang sama, sehingga angka penanda selalu dapat
+ditelusuri ke barisnya. **Kalau definisi stok menipis berubah, ubah `IsBelowMinimum` saja.**
+
 ### Hal yang masih tertunda dan perlu ditanyakan ulang ke pengguna
 
-- Foto produk (upload berkas).
-- Tabel `payments` terpisah bila butuh pembayaran gabungan.
-- Notifikasi khusus admin. Penanda jumlah approval sudah terpasang untuk supervisor,
-  tetapi admin tidak punya antrean pekerjaan yang menunggu, jadi belum diberi penanda.
-  Kandidat yang masuk akal: jumlah produk yang stoknya menipis.
+- Foto produk (upload berkas). Pengguna menanyakannya pada 19 Agustus 2026 dan belum
+  memutuskan; belum ada penyimpanan berkas apa pun di sistem.
 
 ## 9. Format checkpoint
 

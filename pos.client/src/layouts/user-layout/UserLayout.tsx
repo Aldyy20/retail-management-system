@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu, Store, X } from "lucide-react";
 import { api } from "@/services/api";
-import { ROLE_SUPERVISOR } from "@/services/global.types";
 import { useAuth } from "@/components/router/AuthContext";
-import { getRolePath, menuItemsByRole } from "@/components/router/menu-items";
+import { getRolePath, menuBadgeEndpoint, menuItemsByRole } from "@/components/router/menu-items";
+import type { MenuBadgeKey } from "@/components/router/menu-items";
 import { NavDestinations } from "@/layouts/user-layout/NavDestinations";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { Button } from "@/components/ui/Button";
@@ -42,29 +42,39 @@ export function UserLayout() {
     const menuItems = menuItemsByRole[currentUser?.Role ?? ""] ?? [];
 
     /**
-     * Penanda approval yang menunggu (PRD bagian 35). Angkanya dimuat ulang setiap kali
-     * berpindah halaman dan sekali per menit, karena persetujuan diputuskan orang lain
-     * dan supervisor tidak selalu berada di halaman persetujuan saat itu terjadi.
+     * Penanda pekerjaan yang menunggu (PRD bagian 35). Jenis penanda ditentukan menu role
+     * itu sendiri, jadi role yang menunya tidak meminta penanda tidak memanggil apa pun.
+     *
+     * Angkanya dimuat ulang setiap kali berpindah halaman dan sekali per menit, karena
+     * yang mengubahnya adalah orang lain atau transaksi yang sedang berjalan, dan
+     * penggunanya tidak selalu berada di halaman yang bersangkutan saat itu terjadi.
      */
-    const [pendingCount, setPendingCount] = useState(0);
-    const isSupervisor = currentUser?.Role === ROLE_SUPERVISOR;
+    const [badgeCount, setBadgeCount] = useState<Partial<Record<MenuBadgeKey, number>>>({});
+
+    // Digabung jadi teks supaya daftar baru dengan isi sama tidak memicu permintaan ulang.
+    const badgeKeys = menuItems
+        .map((item) => item.badgeKey)
+        .filter((key): key is MenuBadgeKey => Boolean(key))
+        .join(",");
 
     useEffect(() => {
-        if (!isSupervisor) {
+        if (!badgeKeys) {
             return;
         }
 
-        const loadPendingCount = () => {
-            api.post<number>("/supervisor/approval/get-pending-count")
-                .then((response) => setPendingCount(response.data))
-                .catch(() => setPendingCount(0));
+        const loadBadgeCount = () => {
+            for (const key of badgeKeys.split(",") as MenuBadgeKey[]) {
+                api.post<number>(menuBadgeEndpoint[key])
+                    .then((response) => setBadgeCount((current) => ({ ...current, [key]: response.data })))
+                    .catch(() => setBadgeCount((current) => ({ ...current, [key]: 0 })));
+            }
         };
 
-        loadPendingCount();
-        const timerId = window.setInterval(loadPendingCount, 60000);
+        loadBadgeCount();
+        const timerId = window.setInterval(loadBadgeCount, 60000);
 
         return () => window.clearInterval(timerId);
-    }, [isSupervisor, location.pathname]);
+    }, [badgeKeys, location.pathname]);
 
     useEffect(() => {
         if (!showMobileDrawer) {
@@ -138,14 +148,14 @@ export function UserLayout() {
                     aria-label="Navigasi utama"
                     className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-20 shrink-0 overflow-y-auto border-r border-outline-variant bg-surface-low medium:block large:hidden"
                 >
-                    <NavDestinations items={menuItems} rolePath={rolePath} shape="rail" pendingCount={pendingCount} />
+                    <NavDestinations items={menuItems} rolePath={rolePath} shape="rail" badgeCount={badgeCount} />
                 </nav>
 
                 <nav
                     aria-label="Navigasi utama"
                     className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-outline-variant bg-surface-low large:block"
                 >
-                    <NavDestinations items={menuItems} rolePath={rolePath} shape="drawer" pendingCount={pendingCount} />
+                    <NavDestinations items={menuItems} rolePath={rolePath} shape="drawer" badgeCount={badgeCount} />
                 </nav>
 
                 <main id="konten-utama" className="min-w-0 flex-1 px-4 pt-6 pb-10 medium:px-6">
@@ -182,7 +192,7 @@ export function UserLayout() {
                             items={menuItems}
                             rolePath={rolePath}
                             shape="drawer"
-                            pendingCount={pendingCount}
+                            badgeCount={badgeCount}
                             onNavigate={closeMobileDrawer}
                         />
                     </nav>

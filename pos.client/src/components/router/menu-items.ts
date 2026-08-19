@@ -23,6 +23,25 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { ROLE_ADMIN, ROLE_KARYAWAN, ROLE_OWNER, ROLE_SUPERVISOR } from "@/services/global.types";
 
+/**
+ * Jenis pekerjaan tertunda yang boleh muncul sebagai angka pada navigasi.
+ * Menambah jenis baru berarti menambah satu kunci di sini beserta endpoint dan
+ * kalimatnya, bukan menambah cabang di komponen navigasi.
+ */
+export type MenuBadgeKey = "approval" | "lowStock";
+
+/** Endpoint yang mengembalikan satu angka untuk masing-masing jenis. */
+export const menuBadgeEndpoint: Record<MenuBadgeKey, string> = {
+    approval: "/supervisor/approval/get-pending-count",
+    lowStock: "/inventory/get-low-stock-count",
+};
+
+/** Kalimat lengkap untuk pembaca layar, supaya angkanya tidak berdiri sendiri. */
+export const menuBadgeLabel: Record<MenuBadgeKey, string> = {
+    approval: "menunggu tindakan",
+    lowStock: "baris stok perlu dipesan ulang",
+};
+
 export interface MenuItem {
     /** Path relatif terhadap prefix role, contoh: "dashboard" menjadi /admin/dashboard. */
     path: string;
@@ -31,7 +50,7 @@ export interface MenuItem {
     /** Judul kelompok. Tujuan pertama dalam kelompok yang membawanya. */
     groupLabel?: string;
     /** Menampilkan jumlah pekerjaan yang menunggu pada tujuan ini. */
-    showPendingBadge?: boolean;
+    badgeKey?: MenuBadgeKey;
 }
 
 /**
@@ -76,6 +95,15 @@ const stockViewItems: MenuItem[] = [
     { path: "stock-movement", label: "Riwayat stok", icon: ArrowLeftRight },
 ];
 
+/**
+ * Admin tidak punya antrean persetujuan, tetapi dialah yang menetapkan minimum stok
+ * dan memutuskan pembelian. Jadi yang menunggu tindakannya adalah barang yang stoknya
+ * sudah menyentuh batas minimum (PRD bagian 35).
+ */
+const adminStockViewItems: MenuItem[] = stockViewItems.map((item) =>
+    item.path === "inventory" ? { ...item, badgeKey: "lowStock" } : item,
+);
+
 const systemItems: MenuItem[] = [
     { path: "audit-log", label: "Audit log", icon: ScrollText, groupLabel: "Sistem" },
     { path: "system-setting", label: "Pengaturan", icon: Settings },
@@ -93,13 +121,13 @@ export const menuItemsByRole: Record<string, MenuItem[]> = {
         ...loyaltyItems,
         ...promoItems,
         ...reportItems,
-        ...stockViewItems,
+        ...adminStockViewItems,
         ...systemItems,
     ],
     [ROLE_OWNER]: [dashboardItem, ...reportItems, ...stockViewItems],
     [ROLE_SUPERVISOR]: [
         dashboardItem,
-        { path: "approval", label: "Persetujuan", icon: ClipboardCheck, groupLabel: "Pengawasan", showPendingBadge: true },
+        { path: "approval", label: "Persetujuan", icon: ClipboardCheck, groupLabel: "Pengawasan", badgeKey: "approval" },
         ...cashierItems,
         ...stockViewItems,
         ...stockOperationItems,
