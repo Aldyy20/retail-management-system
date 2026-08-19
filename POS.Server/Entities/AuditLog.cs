@@ -39,5 +39,9 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         builder.HasIndex(x => x.DateCreated);
         builder.HasIndex(x => new { x.ModuleName, x.ReferenceId });
+
+        // Halaman audit menyaring menurut aksi, dan tabel ini yang paling cepat membesar
+        // dari seluruh tabel di sistem.
+        builder.HasIndex(x => x.ActionName);
     }
 }

@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="POS.DataLayer/POS.DataLayer.csproj" />
   <Project Path="POS.Server/POS.Server.csproj" />
+  <Project Path="POS.Tests/POS.Tests.csproj" />
   <Project Path="pos.client/pos.client.esproj">
     <Build />
     <Deploy />

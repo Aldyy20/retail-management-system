@@ -186,6 +186,13 @@ export default function CashierPage() {
 
     return (
         <>
+            {/*
+              * Layar kasir sengaja tidak memakai judul halaman yang terlihat: ruangnya
+              * dipakai barang dan keranjang. Judul tetap ada untuk pembaca layar supaya
+              * urutan heading halaman tidak langsung dimulai dari tingkat dua.
+              */}
+            <h1 className="sr-only">Kasir</h1>
+
             <div className="grid gap-4 large:grid-cols-[1fr_24rem] large:items-start">
                 <Surface variant="outlined" className="overflow-hidden">
                     <div className="flex flex-wrap items-end gap-3 border-b border-outline-variant p-4">

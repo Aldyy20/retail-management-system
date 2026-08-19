@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu, Store, X } from "lucide-react";
+import { api } from "@/services/api";
+import { ROLE_SUPERVISOR } from "@/services/global.types";
 import { useAuth } from "@/components/router/AuthContext";
 import { getRolePath, menuItemsByRole } from "@/components/router/menu-items";
 import { NavDestinations } from "@/layouts/user-layout/NavDestinations";
@@ -38,6 +40,31 @@ export function UserLayout() {
 
     const rolePath = getRolePath(currentUser?.Role);
     const menuItems = menuItemsByRole[currentUser?.Role ?? ""] ?? [];
+
+    /**
+     * Penanda approval yang menunggu (PRD bagian 35). Angkanya dimuat ulang setiap kali
+     * berpindah halaman dan sekali per menit, karena persetujuan diputuskan orang lain
+     * dan supervisor tidak selalu berada di halaman persetujuan saat itu terjadi.
+     */
+    const [pendingCount, setPendingCount] = useState(0);
+    const isSupervisor = currentUser?.Role === ROLE_SUPERVISOR;
+
+    useEffect(() => {
+        if (!isSupervisor) {
+            return;
+        }
+
+        const loadPendingCount = () => {
+            api.post<number>("/supervisor/approval/get-pending-count")
+                .then((response) => setPendingCount(response.data))
+                .catch(() => setPendingCount(0));
+        };
+
+        loadPendingCount();
+        const timerId = window.setInterval(loadPendingCount, 60000);
+
+        return () => window.clearInterval(timerId);
+    }, [isSupervisor, location.pathname]);
 
     useEffect(() => {
         if (!showMobileDrawer) {
@@ -111,14 +138,14 @@ export function UserLayout() {
                     aria-label="Navigasi utama"
                     className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-20 shrink-0 overflow-y-auto border-r border-outline-variant bg-surface-low medium:block large:hidden"
                 >
-                    <NavDestinations items={menuItems} rolePath={rolePath} shape="rail" />
+                    <NavDestinations items={menuItems} rolePath={rolePath} shape="rail" pendingCount={pendingCount} />
                 </nav>
 
                 <nav
                     aria-label="Navigasi utama"
                     className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-64 shrink-0 overflow-y-auto border-r border-outline-variant bg-surface-low large:block"
                 >
-                    <NavDestinations items={menuItems} rolePath={rolePath} shape="drawer" />
+                    <NavDestinations items={menuItems} rolePath={rolePath} shape="drawer" pendingCount={pendingCount} />
                 </nav>
 
                 <main id="konten-utama" className="min-w-0 flex-1 px-4 pt-6 pb-10 medium:px-6">
@@ -155,6 +182,7 @@ export function UserLayout() {
                             items={menuItems}
                             rolePath={rolePath}
                             shape="drawer"
+                            pendingCount={pendingCount}
                             onNavigate={closeMobileDrawer}
                         />
                     </nav>

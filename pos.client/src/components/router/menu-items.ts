@@ -6,6 +6,8 @@ import {
     Receipt,
     TicketPercent,
     ScanLine,
+    ScrollText,
+    Settings,
     UserRound,
     ClipboardCheck,
     ClipboardList,
@@ -28,6 +30,8 @@ export interface MenuItem {
     icon: LucideIcon;
     /** Judul kelompok. Tujuan pertama dalam kelompok yang membawanya. */
     groupLabel?: string;
+    /** Menampilkan jumlah pekerjaan yang menunggu pada tujuan ini. */
+    showPendingBadge?: boolean;
 }
 
 /**
@@ -72,17 +76,30 @@ const stockViewItems: MenuItem[] = [
     { path: "stock-movement", label: "Riwayat stok", icon: ArrowLeftRight },
 ];
 
+const systemItems: MenuItem[] = [
+    { path: "audit-log", label: "Audit log", icon: ScrollText, groupLabel: "Sistem" },
+    { path: "system-setting", label: "Pengaturan", icon: Settings },
+];
+
 const stockOperationItems: MenuItem[] = [
     { path: "goods-receiving", label: "Barang masuk", icon: PackagePlus },
     { path: "stock-opname", label: "Stock opname", icon: ClipboardCheck },
 ];
 
 export const menuItemsByRole: Record<string, MenuItem[]> = {
-    [ROLE_ADMIN]: [dashboardItem, ...masterDataItems, ...loyaltyItems, ...promoItems, ...reportItems, ...stockViewItems],
+    [ROLE_ADMIN]: [
+        dashboardItem,
+        ...masterDataItems,
+        ...loyaltyItems,
+        ...promoItems,
+        ...reportItems,
+        ...stockViewItems,
+        ...systemItems,
+    ],
     [ROLE_OWNER]: [dashboardItem, ...reportItems, ...stockViewItems],
     [ROLE_SUPERVISOR]: [
         dashboardItem,
-        { path: "approval", label: "Persetujuan", icon: ClipboardCheck, groupLabel: "Pengawasan" },
+        { path: "approval", label: "Persetujuan", icon: ClipboardCheck, groupLabel: "Pengawasan", showPendingBadge: true },
         ...cashierItems,
         ...stockViewItems,
         ...stockOperationItems,

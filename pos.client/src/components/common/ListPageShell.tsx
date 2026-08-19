@@ -17,6 +17,11 @@ interface ListPageShellProps {
     /** Aksi utama halaman, biasanya satu tombol tambah data. */
     primaryAction?: ReactNode;
     searchPlaceholder: string;
+    /**
+     * Penyaring milik halaman. Diletakkan sebaris dengan pencarian, bukan di header,
+     * karena keduanya mempersempit daftar yang sama.
+     */
+    filters?: ReactNode;
     /** Judul dan penjelasan saat data kosong. Dibedakan antara belum ada data dan hasil pencarian nihil. */
     emptyTitle: string;
     emptyDescription: string;
@@ -47,6 +52,7 @@ export function ListPageShell({
     description,
     primaryAction,
     searchPlaceholder,
+    filters,
     emptyTitle,
     emptyDescription,
     emptyAction,
@@ -68,13 +74,17 @@ export function ListPageShell({
             <PageHeader title={title} description={description} actions={primaryAction} />
 
             <Surface variant="outlined" className="overflow-hidden">
-                <div className="flex flex-wrap items-end justify-between gap-3 border-b border-outline-variant p-4">
-                    <SearchInput placeholder={searchPlaceholder} value={paging.searchPhrase} onSearch={onSearch} />
+                <div className="border-b border-outline-variant p-4">
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                        <SearchInput placeholder={searchPlaceholder} value={paging.searchPhrase} onSearch={onSearch} />
 
-                    <div className="flex items-center gap-2">
-                        <SelectPagingSize rowsPerPage={paging.rowsPerPage} onChange={onPageSizeChange} />
-                        <IconButton label="Muat ulang daftar" icon={<RefreshCw size={18} />} onClick={onRefresh} />
+                        <div className="flex items-center gap-2">
+                            <SelectPagingSize rowsPerPage={paging.rowsPerPage} onChange={onPageSizeChange} />
+                            <IconButton label="Muat ulang daftar" icon={<RefreshCw size={18} />} onClick={onRefresh} />
+                        </div>
                     </div>
+
+                    {filters ? <div className="mt-3 grid gap-3 sm:grid-cols-2 large:grid-cols-4">{filters}</div> : null}
                 </div>
 
                 {isLoading ? <LoadingSpinner label="Memuat data" /> : null}

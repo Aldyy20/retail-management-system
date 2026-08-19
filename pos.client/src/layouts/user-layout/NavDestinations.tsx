@@ -8,6 +8,8 @@ interface NavDestinationsProps {
     items: MenuItem[];
     rolePath: string;
     shape: NavShape;
+    /** Jumlah pekerjaan yang menunggu, ditampilkan pada tujuan yang memintanya. */
+    pendingCount?: number;
     onNavigate?: () => void;
 }
 
@@ -16,7 +18,7 @@ interface NavDestinationsProps {
  * Urutan dan identitas tujuan sengaja tidak berubah antar bentuk: yang berganti hanya
  * penyajiannya, bukan arsitektur aplikasinya.
  */
-export function NavDestinations({ items, rolePath, shape, onNavigate }: NavDestinationsProps) {
+export function NavDestinations({ items, rolePath, shape, pendingCount = 0, onNavigate }: NavDestinationsProps) {
     return (
         <ul className={shape === "rail" ? "flex flex-col items-center gap-1 py-2" : "flex flex-col gap-1 p-3"}>
             {items.map((item) => (
@@ -42,12 +44,30 @@ export function NavDestinations({ items, rolePath, shape, onNavigate }: NavDesti
                                     : "text-on-surface-variant hover:bg-on-surface/8";
 
                                 return shape === "rail"
-                                    ? `flex min-h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-(--radius-control) ${state}`
+                                    ? `relative flex min-h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-(--radius-control) ${state}`
                                     : `flex min-h-12 items-center gap-3 rounded-(--radius-control) px-4 ${state}`;
                             }}
                         >
                             <item.icon size={20} aria-hidden="true" />
                             <span className={shape === "drawer" ? "text-label" : "text-label-small"}>{item.label}</span>
+
+                            {/*
+                              * Angka menunggu hanya muncul ketika memang ada yang menunggu, dan selalu
+                              * disertai teks lengkap untuk pembaca layar supaya artinya tidak bergantung
+                              * pada posisi maupun warna.
+                              */}
+                            {item.showPendingBadge && pendingCount > 0 ? (
+                                <span
+                                    className={
+                                        shape === "rail"
+                                            ? "absolute top-1 right-2 min-w-5 rounded-full bg-error px-1.5 py-0.5 text-center text-numeric text-label-small text-on-error"
+                                            : "ml-auto min-w-5 rounded-full bg-error px-1.5 py-0.5 text-center text-numeric text-label-small text-on-error"
+                                    }
+                                >
+                                    <span aria-hidden="true">{pendingCount}</span>
+                                    <span className="sr-only">{pendingCount} menunggu tindakan</span>
+                                </span>
+                            ) : null}
                         </NavLink>
                     </li>
                 </Fragment>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using POS.Server.Controllers.Api.v1.BaseApi;
 using POS.Server.Data;
 using POS.Server.Entities;
@@ -36,6 +37,7 @@ public class AuthApiController : BaseApiController
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting(AppData.RateLimitPolicyLogin)]
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequestModel model)
     {

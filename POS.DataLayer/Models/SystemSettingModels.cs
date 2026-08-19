@@ -74,3 +74,17 @@ public class CreateEditSystemSettingModel : SystemSettingKeyModel
     [StringLength(2048)]
     public string? SettingValue { get; set; }
 }
+
+/// <summary>
+/// Penyimpanan satu kelompok pengaturan sekaligus. Dikirim per kelompok, bukan per baris,
+/// supaya pengaturan yang saling bergantung (misalnya member dan loyalty) berubah bersamaan.
+/// </summary>
+public class UpdateSystemSettingModel
+{
+    [Required(ErrorMessage = "{0} wajib diisi.")]
+    [Display(Name = "Kelompok")]
+    [StringLength(32)]
+    public string GroupName { get; set; } = string.Empty;
+
+    public List<CreateEditSystemSettingModel> ListSetting { get; set; } = [];
+}

@@ -42,6 +42,12 @@ const VoucherCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages
 // Report Pages
 const ReportPage = lazy(() => import("@/pages/user-pages/common-pages/report/ReportPage"));
 
+// System Pages
+const AuditLogPage = lazy(() => import("@/pages/user-pages/common-pages/audit-log/AuditLogPage"));
+const SystemSettingPage = lazy(
+    () => import("@/pages/user-pages/common-pages/system-setting/SystemSettingPage"),
+);
+
 // Inventory Pages
 const InventoryPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/InventoryPage"));
 const StockMovementPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/StockMovementPage"));
@@ -106,4 +112,8 @@ export const adminRoutes: RouteObject[] = [
     // Inventory Routes
     { path: "inventory", element: <InventoryPage /> },
     { path: "stock-movement", element: <StockMovementPage /> },
+
+    // System Routes
+    { path: "audit-log", element: <AuditLogPage /> },
+    { path: "system-setting", element: <SystemSettingPage /> },
 ];

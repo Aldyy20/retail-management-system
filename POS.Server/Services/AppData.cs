@@ -84,6 +84,13 @@ public static class AppData
 
     #endregion
 
+    #region Pembatasan Laju
+
+    /// <summary>Kebijakan pembatasan laju untuk endpoint masuk.</summary>
+    public const string RateLimitPolicyLogin = "login";
+
+    #endregion
+
     #region Kunci Cache
 
     public const string CacheKeySystemSetting = "SystemSetting";
