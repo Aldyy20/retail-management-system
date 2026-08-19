@@ -28,6 +28,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.Barcode).HasMaxLength(64);
         builder.Property(x => x.ProductName).IsRequired().HasMaxLength(128);
         builder.Property(x => x.Description).HasMaxLength(512);
+        builder.Property(x => x.PhotoFileName).HasMaxLength(128);
         builder.Property(x => x.IdCategory).IsRequired().HasMaxLength(36);
         builder.Property(x => x.IdUnit).IsRequired().HasMaxLength(36);
         builder.Property(x => x.CostPrice).HasPrecision(18, 2);

@@ -74,8 +74,10 @@ Jangan ubah tanpa membicarakannya dengan pengguna.
 8. **Tidak ada tabel `payments` terpisah.** Satu pembayaran per transaksi, kolomnya
    menempel di baris transaksi. Pengguna menegaskan pembayaran gabungan dilarang di
    toko ini, jadi bentuk ini final dan tidak akan dipisah.
-9. **Foto produk belum dibuat.** PRD menyebutnya field opsional dan tidak masuk
-   acceptance criteria. Sudah disampaikan ke pengguna sebagai hal yang ditunda.
+9. **Foto produk dan logo toko disimpan sebagai berkas di server**, di
+   `POS.Server/wwwroot/uploads/{product,store}/`, bukan di database. Yang tersimpan di
+   database hanya nama berkasnya. Batas 3 MB, tanpa pengecilan otomatis, format JPG,
+   PNG, atau WEBP. Pengguna memilih bentuk ini pada 19 Agustus 2026.
 10. **Bila satu produk terkena beberapa diskon aktif, dipakai potongan terbesar**,
     tidak ditumpuk.
 11. **Point dihitung dari total setelah potongan penukaran point**, jadi pembeli tidak
@@ -239,25 +241,37 @@ Catatan penting: pada emulasi mobile, `innerWidth` kadang melaporkan 480 sementa
    dibaca Python, pakai path scratchpad bergaya Windows
    (`C:/Users/PC/AppData/Local/Temp/claude/...`). Path `/tmp` hanya aman untuk
    perintah bash murni seperti `grep` dan `tail`.
-3. **Npgsql menolak `DateTime` berjenis Local ke `timestamptz`.** Sudah diselesaikan
+3. **Middleware berkas statis melewati permintaan yang endpointnya sudah terpilih.**
+   Karena `WebApplication` menyisipkan `UseRouting` sendiri di awal pipeline, `UseStaticFiles`
+   yang ditulis belakangan tidak pernah menyajikan berkas, dan permintaan tanpa endpoint
+   terkena `FallbackPolicy` sehingga gambar dibalas 401. Sudah diselesaikan dengan menulis
+   urutan pipeline `Program.cs` secara lengkap dan eksplisit, `UseStaticFiles` sebelum
+   `app.UseRouting()`. **Jangan kembalikan ke penyisipan otomatis.**
+
+4. **Instance axios memasang `Content-Type: application/json` untuk seluruh permintaan.**
+   Untuk unggahan `FormData`, header itu menghapus pembatas multipart dan server menerima
+   permintaan tanpa berkas. Interceptor di `services/api.ts` melepas header itu bila
+   badan permintaan berupa `FormData`.
+
+5. **Npgsql menolak `DateTime` berjenis Local ke `timestamptz`.** Sudah diselesaikan
    lewat `ConfigureConventions` yang memetakan seluruh `DateTime` ke
    `timestamp without time zone`.
-4. **`GlobalList` menyimpan cache pengaturan sistem.** Mengubah `system_settings`
+6. **`GlobalList` menyimpan cache pengaturan sistem.** Mengubah `system_settings`
    langsung lewat SQL tidak berlaku sampai server di-restart. Halaman pengaturan admin
    (Tahap 9) wajib memanggil `GlobalList.ClearSystemSetting()` setelah menyimpan.
-5. **Berkas DLL terkunci saat server jalan.** `dotnet build` gagal dengan MSB3027.
+7. **Berkas DLL terkunci saat server jalan.** `dotnet build` gagal dengan MSB3027.
    Matikan `dotnet.exe` lebih dulu.
-6. **Arah mutasi tidak bisa disimpulkan dari kolom nilai mutlak.** Pernah menyebabkan
+8. **Arah mutasi tidak bisa disimpulkan dari kolom nilai mutlak.** Pernah menyebabkan
    riwayat point menampilkan `+6` untuk penarikan. Simpulkan arah dari perbandingan
    saldo sebelum dan sesudah.
-7. **Template controller yang di-generate lewat substitusi Python** perlu diperiksa
+9. **Template controller yang di-generate lewat substitusi Python** perlu diperiksa
    ulang komentarnya, karena komentar dari template sumber ikut terbawa.
 
 ---
 
 ## 8. Status pekerjaan
 
-Sembilan tahap selesai dan sudah diverifikasi berjalan. Setiap tahap ditutup dengan
+Dua belas tahap selesai dan sudah diverifikasi berjalan. Setiap tahap ditutup dengan
 checkpoint berisi judul dan keterangan commit untuk pengguna.
 
 | Tahap | Isi | Status |
@@ -271,10 +285,14 @@ checkpoint berisi judul dan keterangan commit untuk pengguna.
 | 7 | Diskon produk berperiode, voucher dengan kuota | Selesai |
 | 8 | Dashboard per role, lima laporan, grafik SVG dengan palet tervalidasi | Selesai |
 | 9 | Audit log, pengaturan sistem, penanda notifikasi, hardening, uji logika kritis | Selesai |
+| 10 | Unggah foto produk dan logo toko | Selesai |
+| 11 | Lupa kata sandi lewat antrean permintaan ke admin | Selesai |
+| 12 | Ganti kata sandi sendiri dari header | Selesai |
 
 Migrasi yang sudah diterapkan: `InitialFoundation`, `MasterData`,
 `PriceHistoryInitialFlag`, `InventoryAndApproval`, `SalesTransaction`,
-`MemberAndLoyalty`, `DiscountAndVoucher`, `AuditLogActionIndex`.
+`MemberAndLoyalty`, `DiscountAndVoucher`, `AuditLogActionIndex`, `ProductPhoto`,
+`PasswordResetRequest`.
 
 ### Aturan bisnis PRD yang sudah terbukti lewat uji
 
@@ -318,6 +336,7 @@ apa pun. Angka dimuat ulang setiap berpindah halaman dan sekali per menit.
 |---|---|---|
 | Supervisor | Persetujuan tertunda | `supervisor/approval/get-pending-count` |
 | Admin | Baris stok yang perlu dipesan ulang | `inventory/get-low-stock-count` |
+| Admin | Permintaan reset kata sandi tertunda | `admin/password-reset/get-pending-count` |
 
 Owner dan Karyawan sengaja tidak diberi penanda: keduanya tidak memutuskan pembelian
 maupun persetujuan.
@@ -327,10 +346,91 @@ ulang** pada halaman stok (`Quantity <= MinimumStock`, mencakup habis dan menipi
 keduanya membaca `BuildInventoryQuery()` yang sama, sehingga angka penanda selalu dapat
 ditelusuri ke barisnya. **Kalau definisi stok menipis berubah, ubah `IsBelowMinimum` saja.**
 
+### Unggah berkas gambar (Tahap 10)
+
+Satu jalur untuk foto produk dan logo toko, keduanya lewat `FileMethods`.
+
+- Berkas masuk `POS.Server/wwwroot/uploads/{product,store}/`. Folder dibuat otomatis saat
+  startup lewat `FileMethods.EnsureFolder()`, **di-gitignore**, dan **dikecualikan dari
+  `dotnet publish`** lewat `POS.Server.csproj`: isinya milik masing-masing pemasangan, bukan
+  bagian dari kode. Konsekuensinya folder itu wajib dicadangkan terpisah dari database.
+- **Nama berkas selalu dibuat server** (`Guid("N")` + ekstensi). Nama dari pengunggah tidak
+  pernah dipakai, sehingga penulisan ke luar folder dan penimpaan berkas milik data lain
+  tertutup dengan sendirinya. Nama yang datang dari frontend saat menyimpan data dicocokkan
+  ulang ke `FileMethods.IsValidFileName` dan keberadaan berkasnya.
+- Tiga lapis pemeriksaan unggahan: ukuran (dari header lalu dari isi), ekstensi beserta
+  tipe konten, dan **penanda awal berkas**. Lapis ketiga yang menolak berkas non-gambar
+  yang ekstensinya sekadar diganti. SVG sengaja tidak diizinkan karena dapat memuat skrip.
+- Unggah dan simpan adalah **dua langkah terpisah**: berkas dikirim saat dipilih, namanya
+  ikut pada JSON penyimpanan data. Akibatnya berkas yang diunggah lalu formulirnya
+  ditinggalkan menjadi yatim. Dibiarkan; belum ada pembersih terjadwal.
+- Berkas lama dihapus **setelah** penyimpanan datanya berhasil, bukan sebelum, supaya
+  penyimpanan yang gagal tidak meninggalkan data yang menunjuk berkas yang sudah tiada.
+- Logo tampil di header aplikasi, halaman masuk, dan nota. `store.logo` bertipe `image`,
+  dan seeder memperbaiki tipe itu di tempat untuk database yang sudah berjalan.
+
+### Lupa kata sandi (Tahap 11)
+
+Sistem ini **tidak mengirim email sama sekali**, dan PRD bagian 48 memang menunda integrasi
+email. Jadi pemulihan akses berjalan lewat orang, bukan lewat tautan.
+
+1. Pengguna mengisi nama penggunanya di `/lupa-kata-sandi`. Permintaan masuk tabel
+   `password_reset_requests` berstatus Pending.
+2. Admin melihatnya di menu **Sistem > Reset kata sandi**, lengkap dengan penanda jumlah.
+3. Admin memastikan siapa yang meminta secara langsung, lalu menetapkan kata sandi baru
+   dan menyerahkannya. Atau menolak dengan alasan yang tersimpan.
+
+Yang tidak boleh dilonggarkan:
+
+- **Balasan endpoint publik selalu sama persis**, ada tidaknya nama pengguna itu, termasuk
+  untuk akun nonaktif. Balasan yang berbeda akan menjadi cara memastikan nama pengguna mana
+  yang terdaftar di toko ini.
+- **Satu permintaan tertunda per akun**, ditegakkan index tersaring `"Status" = 2`.
+  Permintaan berulang memperbarui catatannya, bukan menambah baris.
+- Endpoint publiknya ikut kebijakan laju `AppData.RateLimitPolicyAuth` bersama login,
+  sepuluh permintaan per menit per alamat IP. Konstanta itu **dulu bernama
+  `RateLimitPolicyLogin`** dan diganti karena kini melindungi dua endpoint.
+- Kata sandi lama tidak pernah dibaca. Yang dipakai token reset milik Identity, sama
+  seperti reset dari halaman Pengguna.
+- Permintaan yang sudah ditangani tidak dapat ditangani ulang.
+
+Sistem tidak dapat memastikan siapa yang menekan tombol di halaman masuk. Pemastian
+identitas itu memang pekerjaan admin, dan yang dijamin sistem hanyalah jejaknya.
+
+### Ganti kata sandi sendiri (Tahap 12)
+
+Endpoint `auth/change-password` sudah ada sejak Tahap 1 tetapi tidak pernah dipanggil
+siapa pun. Tahap ini menyambungkannya.
+
+- Dibuka lewat **tombol ikon di header** pada layar `medium` ke atas, dan lewat **tombol
+  di dalam drawer** pada layar sempit. Bukan tujuan navigasi tersendiri: ini tindakan
+  sekali jalan milik akun, berlaku sama untuk keempat role, dan menu navigasi disimpan
+  untuk pekerjaan sehari-hari.
+- **Tombolnya sengaja tidak ada di header 375px.** Header di lebar itu sudah penuh, dan
+  menambah satu tombol menyisakan lima karakter saja untuk nama toko. Kalau nanti ada
+  tombol header baru, periksa lagi lebar nama tokonya.
+- `IconButton` sudah memasang `inline-flex` sendiri, sehingga kelas `hidden` yang
+  ditambahkan lewat prop `className` **tidak menang**. Penyembunyian responsifnya
+  dikerjakan oleh `div` pembungkus.
+- Kata sandi lama tetap diminta meskipun pengguna sudah masuk, supaya perangkat yang
+  ditinggal terbuka sebentar tidak dapat dipakai mengunci pemiliknya.
+
+**Batas yang diketahui:** token JWT yang sudah terbit tetap berlaku sampai kedaluwarsa
+(480 menit) meskipun kata sandinya baru diganti, karena token tidak memeriksa security
+stamp. Sesi lain karena itu tidak ikut terputus. Memperbaikinya menuntut pemeriksaan
+stamp per permintaan, yang berarti satu query tambahan di jalur panas kasir.
+
+### Penerjemahan kesalahan Identity
+
+`TranslateIdentityErrors` berada di `BaseApiController` dan dipakai seluruh controller
+yang menyentuh Identity. Sebelumnya salinannya hanya ada di `EmployeeApiController`,
+sehingga `change-password` membalas "Incorrect password." dalam Bahasa Inggris. **Kalau
+menambah pemanggilan UserManager yang bisa gagal, pakai penerjemah ini, jangan
+`result.Errors` mentah.**
+
 ### Hal yang masih tertunda dan perlu ditanyakan ulang ke pengguna
 
-- Foto produk (upload berkas). Pengguna menanyakannya pada 19 Agustus 2026 dan belum
-  memutuskan; belum ada penyimpanan berkas apa pun di sistem.
+- Tidak ada.
 
 ## 9. Format checkpoint
 

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Menu, Store, X } from "lucide-react";
+import { KeyRound, LogOut, Menu, Store, X } from "lucide-react";
 import { api } from "@/services/api";
 import { useAuth } from "@/components/router/AuthContext";
 import { getRolePath, menuBadgeEndpoint, menuItemsByRole } from "@/components/router/menu-items";
 import type { MenuBadgeKey } from "@/components/router/menu-items";
 import { NavDestinations } from "@/layouts/user-layout/NavDestinations";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { ChangePasswordDialog } from "@/components/common/ChangePasswordDialog";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { useSnackbar } from "@/components/ui/Snackbar";
@@ -28,6 +29,13 @@ export function UserLayout() {
     const location = useLocation();
 
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    /**
+     * Ganti kata sandi ditaruh di header, bukan sebagai tujuan navigasi tersendiri, karena
+     * ini tindakan sekali jalan milik akun dan berlaku sama untuk keempat role. Menu
+     * navigasi disimpan untuk pekerjaan sehari-hari.
+     */
+    const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
 
     /**
      * Drawer sementara diikat pada halaman tempat ia dibuka. Begitu pengguna berpindah
@@ -116,18 +124,39 @@ export function UserLayout() {
                     className="medium:hidden"
                 />
 
-                <span
-                    aria-hidden="true"
-                    className="hidden size-9 items-center justify-center rounded-(--radius-control) bg-primary-container text-on-primary-container medium:flex"
-                >
-                    <Store size={18} />
-                </span>
+                {currentUser?.StoreLogoUrl ? (
+                    <img
+                        src={currentUser.StoreLogoUrl}
+                        alt=""
+                        className="hidden size-9 shrink-0 rounded-(--radius-control) bg-primary-container object-contain medium:block"
+                    />
+                ) : (
+                    <span
+                        aria-hidden="true"
+                        className="hidden size-9 items-center justify-center rounded-(--radius-control) bg-primary-container text-on-primary-container medium:flex"
+                    >
+                        <Store size={18} />
+                    </span>
+                )}
 
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-title text-on-surface">{currentUser?.StoreName}</p>
                     <p className="hidden truncate text-label-small text-on-surface-variant medium:block">
                         {currentUser?.FullName} · {currentUser?.Role}
                     </p>
+                </div>
+
+                {/*
+                  * Pada layar sempit tombol ini pindah ke dalam drawer. Header 375px sudah
+                  * penuh oleh tombol menu, pengalih tema, dan keluar; menambah satu lagi
+                  * di situ menyisakan lima karakter saja untuk nama toko.
+                  */}
+                <div className="hidden medium:block">
+                    <IconButton
+                        label="Ganti kata sandi"
+                        icon={<KeyRound size={20} />}
+                        onClick={() => setShowChangePasswordDialog(true)}
+                    />
                 </div>
 
                 <ThemeToggle />
@@ -165,6 +194,13 @@ export function UserLayout() {
                 </main>
             </div>
 
+            {/* key mengosongkan isian setiap kali dialog dibuka, tanpa efek pembersih. */}
+            <ChangePasswordDialog
+                key={showChangePasswordDialog ? "terbuka" : "tertutup"}
+                isOpen={showChangePasswordDialog}
+                onClose={() => setShowChangePasswordDialog(false)}
+            />
+
             {showMobileDrawer ? (
                 <div
                     className="fixed inset-0 z-40 bg-scrim/50 medium:hidden"
@@ -195,6 +231,21 @@ export function UserLayout() {
                             badgeCount={badgeCount}
                             onNavigate={closeMobileDrawer}
                         />
+
+                        <div className="border-t border-outline-variant p-3">
+                            <Button
+                                variant="text"
+                                icon={<KeyRound size={18} aria-hidden="true" />}
+                                fullWidth
+                                className="justify-start"
+                                onClick={() => {
+                                    closeMobileDrawer();
+                                    setShowChangePasswordDialog(true);
+                                }}
+                            >
+                                Ganti kata sandi
+                            </Button>
+                        </div>
                     </nav>
                 </div>
             ) : null}

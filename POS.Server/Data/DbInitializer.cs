@@ -109,7 +109,7 @@ public static class DbInitializer
             Setting(AppData.SettingStoreAddress, "", "text", "store", "Alamat Toko", "Alamat lengkap yang tercetak pada nota.", 2),
             Setting(AppData.SettingStorePhone, "", "text", "store", "Nomor Telepon", null, 3),
             Setting(AppData.SettingStoreEmail, "", "text", "store", "Email Toko", null, 4),
-            Setting(AppData.SettingStoreLogo, "", "text", "store", "Logo Toko", "Berkas logo yang tampil pada nota dan header aplikasi.", 5),
+            Setting(AppData.SettingStoreLogo, "", "image", "store", "Logo Toko", "Berkas logo yang tampil pada nota dan header aplikasi.", 5),
             Setting(AppData.SettingStoreCurrency, "IDR", "text", "store", "Mata Uang", null, 6),
             Setting(AppData.SettingStoreTimezone, "Asia/Makassar", "text", "store", "Zona Waktu", null, 7),
 
@@ -131,6 +131,19 @@ public static class DbInitializer
 
             Setting(AppData.SettingTransactionApprovalVoid, "true", "boolean", "transaction", "Approval Pembatalan Transaksi", "Void transaksi menunggu persetujuan supervisor.", 1),
         ];
+
+        // store.logo dulu bertipe text karena unggahan berkas belum ada. Diperbaiki di
+        // tempat supaya database yang sudah berjalan ikut memakai kontrol unggah gambar.
+        SystemSetting? logoSetting = await db.SystemSetting
+            .FirstOrDefaultAsync(x => x.SettingKey == AppData.SettingStoreLogo && x.ValueType != "image");
+
+        if (logoSetting != null)
+        {
+            logoSetting.ValueType = "image";
+            logoSetting.SettingValue = string.Empty;
+            await db.SaveChangesAsync();
+            GlobalList.ClearSystemSetting();
+        }
 
         string[] existingKeys = await db.SystemSetting.Select(x => x.SettingKey).ToArrayAsync();
         SystemSetting[] missing = defaults.Where(x => !existingKeys.Contains(x.SettingKey)).ToArray();

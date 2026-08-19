@@ -82,6 +82,8 @@ export interface CreateEditProductModel {
     CostPrice: number;
     SellingPrice: number;
     MinimumStock: number;
+    /** Nama berkas foto di dalam /uploads/product, bukan alamat lengkap. */
+    PhotoFileName: string | null;
     IsActive: boolean;
     PriceChangeNote?: string | null;
 }

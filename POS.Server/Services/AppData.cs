@@ -84,10 +84,27 @@ public static class AppData
 
     #endregion
 
+    #region Berkas Unggahan
+
+    /// <summary>Sub folder di dalam wwwroot/uploads. Satu folder per jenis berkas.</summary>
+    public const string UploadFolderProduct = "product";
+    public const string UploadFolderStore = "store";
+
+    public static readonly string[] AllUploadFolder =
+    [
+        UploadFolderProduct,
+        UploadFolderStore,
+    ];
+
+    /// <summary>Batas ukuran satu berkas gambar: 3 MB.</summary>
+    public const long MaxImageSizeByte = 3 * 1024 * 1024;
+
+    #endregion
+
     #region Pembatasan Laju
 
-    /// <summary>Kebijakan pembatasan laju untuk endpoint masuk.</summary>
-    public const string RateLimitPolicyLogin = "login";
+    /// <summary>Kebijakan pembatasan laju untuk endpoint autentikasi publik.</summary>
+    public const string RateLimitPolicyAuth = "auth";
 
     #endregion
 

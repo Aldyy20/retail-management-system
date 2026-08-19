@@ -62,3 +62,14 @@ export function getDocumentStatusTone(status: number): "pending" | "success" | "
             return "info";
     }
 }
+
+/** Segmen alamat berkas statis di backend. Sepadan dengan AppSettings.UploadFolder. */
+const UPLOAD_URL_PREFIX = "/uploads";
+
+/**
+ * Alamat gambar unggahan dari nama berkasnya. Mengembalikan null bila belum ada berkas,
+ * sehingga pemanggil memutuskan sendiri apa yang tampil sebagai gantinya.
+ */
+export function getUploadedImageUrl(folder: string, fileName: string | null | undefined): string | null {
+    return fileName ? `${UPLOAD_URL_PREFIX}/${folder}/${fileName}` : null;
+}

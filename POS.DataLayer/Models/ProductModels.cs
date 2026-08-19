@@ -51,6 +51,14 @@ public class BaseProductModel : ProductKeyModel, IBaseDataInfo, IActivatable
     [Range(0, 999999, ErrorMessage = "{0} tidak boleh negatif.")]
     public int MinimumStock { get; set; }
 
+    /// <summary>
+    /// Nama berkas foto di dalam wwwroot/uploads/product. Hanya namanya yang disimpan,
+    /// bukan alamat lengkap, supaya folder unggahan dapat dipindah tanpa menyentuh data.
+    /// </summary>
+    [Display(Name = "Foto Barang")]
+    [StringLength(128)]
+    public string? PhotoFileName { get; set; }
+
     [Display(Name = "Status Aktif")]
     public bool IsActive { get; set; } = true;
 

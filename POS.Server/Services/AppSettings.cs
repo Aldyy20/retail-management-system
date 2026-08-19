@@ -13,7 +13,13 @@ public static class AppSettings
     public static string[] AllowedOrigins { get; private set; } = [];
     public static string UploadFolder { get; private set; } = "uploads";
 
-    public static void Initialize(IConfiguration configuration)
+    /// <summary>
+    /// Folder akar berkas statis. Dibaca dari environment, dengan cadangan wwwroot di
+    /// bawah content root, karena WebRootPath kosong selama folder itu belum ada.
+    /// </summary>
+    public static string WebRootPath { get; private set; } = string.Empty;
+
+    public static void Initialize(IConfiguration configuration, IWebHostEnvironment environment)
     {
         JwtIssuer = configuration["Jwt:Issuer"] ?? JwtIssuer;
         JwtAudience = configuration["Jwt:Audience"] ?? JwtAudience;
@@ -21,6 +27,10 @@ public static class AppSettings
         JwtExpiryMinutes = int.TryParse(configuration["Jwt:ExpiryMinutes"], out int minutes) ? minutes : JwtExpiryMinutes;
         AllowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
         UploadFolder = configuration["UploadFolder"] ?? UploadFolder;
+
+        WebRootPath = string.IsNullOrWhiteSpace(environment.WebRootPath)
+            ? Path.Combine(environment.ContentRootPath, "wwwroot")
+            : environment.WebRootPath;
 
         if (string.IsNullOrWhiteSpace(JwtSecret) || JwtSecret.Length < 32)
         {

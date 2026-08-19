@@ -26,6 +26,9 @@ public class CurrentUserModel
     public string Token { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
     public string StoreName { get; set; } = string.Empty;
+
+    /// <summary>Alamat logo toko, kosong bila belum diunggah.</summary>
+    public string StoreLogoUrl { get; set; } = string.Empty;
 }
 
 public class ChangePasswordRequestModel

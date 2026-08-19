@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { api } from "@/services/api";
-import { getAxiosErrorMessage } from "@/services/global.methods";
+import { getAxiosErrorMessage, getUploadedImageUrl } from "@/services/global.methods";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
@@ -94,6 +94,14 @@ export default function ProductDetailsPage() {
                             <h2 className="text-title text-on-surface">Rincian</h2>
                             <StatusPill tone={product.IsActive ? "success" : "neutral"} label={product.StrStatus} />
                         </div>
+
+                        {product.PhotoFileName ? (
+                            <img
+                                src={getUploadedImageUrl("product", product.PhotoFileName) ?? ""}
+                                alt={`Foto ${product.ProductName}`}
+                                className="mb-4 aspect-square w-full rounded-(--radius-control) border border-outline-variant bg-surface-low object-contain"
+                            />
+                        ) : null}
 
                         <dl className="flex flex-col gap-2.5">
                             {detailRows.map((row) => (

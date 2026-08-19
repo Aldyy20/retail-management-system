@@ -13,6 +13,7 @@ import { supervisorRoutes } from "@/components/router/routes/supervisor-routes";
 import { karyawanRoutes } from "@/components/router/routes/karyawan-routes";
 
 const LoginPage = lazy(() => import("@/pages/public-pages/LoginPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/public-pages/ForgotPasswordPage"));
 const NotFoundPage = lazy(() => import("@/pages/public-pages/NotFoundPage"));
 
 const routesByRole: { role: string; path: string; routes: RouteObject[] }[] = [
@@ -40,6 +41,7 @@ export function AppRouter() {
             <Routes>
                 <Route path="/" element={<HomeRedirect />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/lupa-kata-sandi" element={<ForgotPasswordPage />} />
 
                 {routesByRole.map(({ role, path, routes }) => (
                     <Route

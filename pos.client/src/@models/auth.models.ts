@@ -11,6 +11,7 @@ export interface CurrentUserModel {
     Token: string;
     ExpiresAt: string;
     StoreName: string;
+    StoreLogoUrl: string;
 }
 
 export interface ChangePasswordRequestModel {

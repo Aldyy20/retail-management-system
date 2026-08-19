@@ -43,6 +43,9 @@ const VoucherCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages
 const ReportPage = lazy(() => import("@/pages/user-pages/common-pages/report/ReportPage"));
 
 // System Pages
+const PasswordResetPage = lazy(
+    () => import("@/pages/user-pages/common-pages/password-reset/PasswordResetPage"),
+);
 const AuditLogPage = lazy(() => import("@/pages/user-pages/common-pages/audit-log/AuditLogPage"));
 const SystemSettingPage = lazy(
     () => import("@/pages/user-pages/common-pages/system-setting/SystemSettingPage"),
@@ -114,6 +117,7 @@ export const adminRoutes: RouteObject[] = [
     { path: "stock-movement", element: <StockMovementPage /> },
 
     // System Routes
+    { path: "password-reset", element: <PasswordResetPage /> },
     { path: "audit-log", element: <AuditLogPage /> },
     { path: "system-setting", element: <SystemSettingPage /> },
 ];

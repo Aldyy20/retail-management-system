@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, Store, User } from "lucide-react";
 import { useAuth } from "@/components/router/AuthContext";
 import { getRolePath } from "@/components/router/menu-items";
@@ -66,9 +66,17 @@ export default function LoginPage() {
     return (
         <div className="min-h-dvh bg-surface text-on-surface expanded:grid expanded:grid-cols-[1fr_28rem]">
             <aside className="hidden expanded:flex flex-col justify-between bg-primary-container p-10 text-on-primary-container">
-                <span className="flex size-12 items-center justify-center rounded-(--radius-card) bg-on-primary-container/12">
-                    <Store size={24} aria-hidden="true" />
-                </span>
+                {storeInfo?.StoreLogoUrl ? (
+                    <img
+                        src={storeInfo.StoreLogoUrl}
+                        alt=""
+                        className="size-12 rounded-(--radius-card) bg-on-primary-container/12 object-contain"
+                    />
+                ) : (
+                    <span className="flex size-12 items-center justify-center rounded-(--radius-card) bg-on-primary-container/12">
+                        <Store size={24} aria-hidden="true" />
+                    </span>
+                )}
 
                 <div>
                     <p className="text-headline">{storeInfo?.StoreName ?? "Sistem Kasir dan Gudang"}</p>
@@ -85,9 +93,17 @@ export default function LoginPage() {
                 <div className="mx-auto w-full max-w-sm">
                     <div className="mb-8 flex items-start justify-between gap-4">
                         <div className="expanded:hidden">
-                            <span className="mb-3 flex size-11 items-center justify-center rounded-(--radius-card) bg-primary-container text-on-primary-container">
-                                <Store size={20} aria-hidden="true" />
-                            </span>
+                            {storeInfo?.StoreLogoUrl ? (
+                                <img
+                                    src={storeInfo.StoreLogoUrl}
+                                    alt=""
+                                    className="mb-3 size-11 rounded-(--radius-card) bg-primary-container object-contain"
+                                />
+                            ) : (
+                                <span className="mb-3 flex size-11 items-center justify-center rounded-(--radius-card) bg-primary-container text-on-primary-container">
+                                    <Store size={20} aria-hidden="true" />
+                                </span>
+                            )}
                             <p className="text-title">{storeInfo?.StoreName ?? "Sistem Kasir dan Gudang"}</p>
                         </div>
                         <ThemeToggle />
@@ -138,7 +154,14 @@ export default function LoginPage() {
                     </form>
 
                     <p className="mt-6 text-label-small text-on-surface-variant">
-                        Lupa kata sandi? Hubungi admin toko untuk mengatur ulang.
+                        Lupa kata sandi?{" "}
+                        <Link
+                            to="/lupa-kata-sandi"
+                            className="rounded-(--radius-chip) text-primary underline underline-offset-2 hover:bg-primary/8"
+                        >
+                            Kirim permintaan ke admin toko
+                        </Link>
+                        .
                     </p>
                 </div>
             </main>

@@ -6,6 +6,7 @@ using POS.DataLayer.Models;
 using POS.Server.Controllers.Api.v1.BaseApi;
 using POS.Server.Data;
 using POS.Server.Entities;
+using POS.Server.Models;
 using POS.Server.Services;
 
 namespace POS.Server.Controllers.Api.v1.AdminApi;
@@ -86,6 +87,7 @@ public class SystemSettingApiController : BaseApiController
         }
 
         List<string> listChange = [];
+        string? previousLogoFileName = null;
 
         foreach (SystemSetting entity in listEntity)
         {
@@ -103,6 +105,11 @@ public class SystemSettingApiController : BaseApiController
             }
 
             listChange.Add($"{entity.DisplayName}: {Display(entity.SettingValue)} menjadi {Display(newValue)}");
+
+            if (entity.SettingKey == AppData.SettingStoreLogo)
+            {
+                previousLogoFileName = entity.SettingValue;
+            }
 
             entity.SettingValue = newValue;
             entity.ModifiedById = CurrentUserId;
@@ -131,7 +138,39 @@ public class SystemSettingApiController : BaseApiController
         // pengaturan dibaca dari cache pada hampir setiap transaksi kasir.
         GlobalList.ClearSystemSetting();
 
+        // Logo lama dihapus setelah tersimpan, sama seperti foto produk.
+        FileMethods.Delete(AppData.UploadFolderStore, previousLogoFileName);
+
         return Ok($"{listChange.Count} pengaturan berhasil disimpan.");
+    }
+
+    /// <summary>
+    /// Menyimpan logo toko lalu mengembalikan nama berkasnya, yang kemudian dikirim balik
+    /// sebagai nilai pengaturan store.logo saat kelompok identitas toko disimpan.
+    /// </summary>
+    [HttpPost("upload-logo")]
+    [RequestSizeLimit(AppData.MaxImageSizeByte + FileMethods.MultipartOverheadByte)]
+    public async Task<IActionResult> UploadLogoAsync([FromForm] UploadImageRequestModel model)
+    {
+        string? oversizeMessage = FileMethods.GetOversizeMessage(Request.ContentLength);
+
+        if (oversizeMessage != null)
+        {
+            return BadRequest(oversizeMessage);
+        }
+
+        (string? fileName, string? errorMessage) = await FileMethods.SaveImageAsync(model?.File, AppData.UploadFolderStore);
+
+        if (fileName == null)
+        {
+            return BadRequest(errorMessage);
+        }
+
+        return Ok(new UploadImageResponseModel
+        {
+            FileName = fileName,
+            FileUrl = FileMethods.GetPublicUrl(AppData.UploadFolderStore, fileName),
+        });
     }
 
     /// <summary>
@@ -151,6 +190,11 @@ public class SystemSettingApiController : BaseApiController
             case "integer":
                 return int.TryParse(trimmed, out int parsedInt) ? parsedInt.ToString(CultureInfo.InvariantCulture) : null;
 
+            // Nilai bertipe gambar berisi nama berkas hasil unggahan, dan nama itu selalu
+            // dicocokkan ulang ke folder unggahan supaya tidak dapat diisi sembarangan.
+            case "image":
+                return trimmed.Length == 0 || FileMethods.Exists(AppData.UploadFolderStore, trimmed) ? trimmed : null;
+
             case "decimal":
                 return decimal.TryParse(trimmed, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal parsedDecimal)
                     ? parsedDecimal.ToString(CultureInfo.InvariantCulture)
@@ -167,6 +211,7 @@ public class SystemSettingApiController : BaseApiController
         {
             "boolean" => "Isinya harus aktif atau nonaktif.",
             "integer" => "Isinya harus bilangan bulat, contoh 10.",
+            "image" => "Berkas gambarnya tidak ditemukan di server. Unggah ulang lalu simpan lagi.",
             "decimal" => "Isinya harus angka, contoh 10000 atau 10000.5.",
             _ => "Periksa kembali isiannya.",
         };

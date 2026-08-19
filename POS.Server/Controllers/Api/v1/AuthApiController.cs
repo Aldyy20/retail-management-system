@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using POS.Server.Controllers.Api.v1.BaseApi;
+using Microsoft.EntityFrameworkCore;
+using POS.DataLayer.Enums;
+using POS.DataLayer.Models;
 using POS.Server.Data;
 using POS.Server.Entities;
 using POS.Server.Models;
@@ -33,11 +36,12 @@ public class AuthApiController : BaseApiController
         {
             StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
             StoreAddress = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreAddress),
+            StoreLogoUrl = await GetStoreLogoUrlAsync(),
         });
     }
 
     [AllowAnonymous]
-    [EnableRateLimiting(AppData.RateLimitPolicyLogin)]
+    [EnableRateLimiting(AppData.RateLimitPolicyAuth)]
     [HttpPost("login")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequestModel model)
     {
@@ -90,7 +94,83 @@ public class AuthApiController : BaseApiController
             Token = token,
             ExpiresAt = expiresAt,
             StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
+            StoreLogoUrl = await GetStoreLogoUrlAsync(),
         });
+    }
+
+    /// <summary>
+    /// Mengantrekan permintaan pengaturan ulang kata sandi untuk ditangani admin.
+    ///
+    /// Balasannya selalu sama persis, baik nama penggunanya ada maupun tidak. Halaman ini
+    /// terbuka tanpa token, jadi balasan yang berbeda akan menjadi cara memastikan nama
+    /// pengguna mana yang terdaftar di toko ini.
+    /// </summary>
+    [AllowAnonymous]
+    [EnableRateLimiting(AppData.RateLimitPolicyAuth)]
+    [HttpPost("request-password-reset")]
+    public async Task<IActionResult> RequestPasswordResetAsync([FromBody] CreatePasswordResetRequestModel model)
+    {
+        if (model == null)
+        {
+            return BadRequest(AppErrorMessages.ErrorEmptyParameterWithName("model"));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(GetModelStateErrorMessage());
+        }
+
+        const string sameAnswer = "Permintaan Anda sudah dikirim. Hubungi admin toko untuk menerima kata sandi barunya.";
+
+        string userName = model.UserName.Trim();
+        ApplicationUser? user = await _userManager.FindByNameAsync(userName);
+
+        // Akun yang sengaja dinonaktifkan tidak boleh dihidupkan lewat jalur ini.
+        if (user == null || !user.IsActive)
+        {
+            return Ok(sameAnswer);
+        }
+
+        // Permintaan yang masih menunggu cukup diperbarui catatannya, bukan ditambah baris
+        // baru. Index tersaring di database menegakkan hal yang sama bila dua permintaan
+        // tiba bersamaan.
+        PasswordResetRequest? pending = await _db.PasswordResetRequest
+            .FirstOrDefaultAsync(x => x.IdUser == user.Id && x.Status == DataStatus.Pending);
+
+        if (pending != null)
+        {
+            pending.Note = string.IsNullOrWhiteSpace(model.Note) ? pending.Note : model.Note.Trim();
+            pending.DateCreated = DateTime.Now;
+        }
+        else
+        {
+            _db.PasswordResetRequest.Add(new PasswordResetRequest
+            {
+                IdUser = user.Id,
+                UserName = user.UserName ?? userName,
+                Note = string.IsNullOrWhiteSpace(model.Note) ? null : model.Note.Trim(),
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Status = DataStatus.Pending,
+            });
+        }
+
+        AuditLog requestLog = AppMethods.BuildAuditLog("REQUEST_PASSWORD_RESET", "Autentikasi", user.Id,
+            $"{user.UserName} meminta pengaturan ulang kata sandi.", null, null, HttpContext);
+        requestLog.CreatedById = user.Id;
+        _db.AuditLog.Add(requestLog);
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Tabrakan pada index tersaring berarti permintaan lain sudah lebih dulu masuk.
+            // Bagi pemohon hasilnya sama saja, jadi tidak perlu dijadikan kesalahan.
+            return Ok(sameAnswer);
+        }
+
+        return Ok(sameAnswer);
     }
 
     /// <summary>
@@ -116,6 +196,7 @@ public class AuthApiController : BaseApiController
             Role = User.GetRoleName() ?? string.Empty,
             Token = string.Empty,
             StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
+            StoreLogoUrl = await GetStoreLogoUrlAsync(),
         });
     }
 
@@ -144,12 +225,25 @@ public class AuthApiController : BaseApiController
 
         if (!result.Succeeded)
         {
-            return BadRequest(string.Join(" ", result.Errors.Select(x => x.Description)));
+            return BadRequest(TranslateIdentityErrors(result));
         }
 
         AddAuditLog("CHANGE_PASSWORD", user.Id, $"{user.UserName} mengubah kata sandi.");
         await _db.SaveChangesAsync();
 
         return Ok("Kata sandi berhasil diubah.");
+    }
+
+    /// <summary>
+    /// Alamat logo toko. Dikembalikan kosong bila pengaturannya menunjuk berkas yang sudah
+    /// tidak ada, supaya frontend tidak pernah merender gambar rusak.
+    /// </summary>
+    private async Task<string> GetStoreLogoUrlAsync()
+    {
+        string fileName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreLogo);
+
+        return FileMethods.Exists(AppData.UploadFolderStore, fileName)
+            ? FileMethods.GetPublicUrl(AppData.UploadFolderStore, fileName)
+            : string.Empty;
     }
 }

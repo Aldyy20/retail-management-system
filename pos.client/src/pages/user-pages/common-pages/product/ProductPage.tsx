@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useListPage } from "@/hooks/useListPage";
+import { getUploadedImageUrl } from "@/services/global.methods";
 import { useSnackbar } from "@/components/ui/Snackbar";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
@@ -87,10 +88,27 @@ export default function ProductPage() {
                         {list.listData.map((row) => (
                             <tr key={row.IdProduct} className="hover:bg-on-surface/4">
                                 <td className="px-4 py-3">
-                                    <p className="text-body text-on-surface">{row.ProductName}</p>
-                                    <p className="text-label-small text-on-surface-variant">
-                                        {row.Barcode ? row.Sku + " · " + row.Barcode : row.Sku}
-                                    </p>
+                                    {/*
+                                      * Foto berperan sebagai pengenal cepat di samping namanya, bukan
+                                      * sebagai hiasan. Baris tanpa foto tidak diberi kotak kosong supaya
+                                      * daftarnya tidak berubah menjadi galeri berlubang.
+                                      */}
+                                    <div className="flex items-center gap-3">
+                                        {row.PhotoFileName ? (
+                                            <img
+                                                src={getUploadedImageUrl("product", row.PhotoFileName) ?? ""}
+                                                alt=""
+                                                className="size-10 shrink-0 rounded-(--radius-chip) border border-outline-variant bg-surface-low object-cover"
+                                            />
+                                        ) : null}
+
+                                        <div className="min-w-0">
+                                            <p className="text-body text-on-surface">{row.ProductName}</p>
+                                            <p className="text-label-small text-on-surface-variant">
+                                                {row.Barcode ? row.Sku + " · " + row.Barcode : row.Sku}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3 text-body text-on-surface-variant">
                                     {row.CategoryName}

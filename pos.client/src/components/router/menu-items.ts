@@ -11,6 +11,7 @@ import {
     UserRound,
     ClipboardCheck,
     ClipboardList,
+    KeyRound,
     LayoutDashboard,
     Package,
     PackagePlus,
@@ -28,18 +29,20 @@ import { ROLE_ADMIN, ROLE_KARYAWAN, ROLE_OWNER, ROLE_SUPERVISOR } from "@/servic
  * Menambah jenis baru berarti menambah satu kunci di sini beserta endpoint dan
  * kalimatnya, bukan menambah cabang di komponen navigasi.
  */
-export type MenuBadgeKey = "approval" | "lowStock";
+export type MenuBadgeKey = "approval" | "lowStock" | "passwordReset";
 
 /** Endpoint yang mengembalikan satu angka untuk masing-masing jenis. */
 export const menuBadgeEndpoint: Record<MenuBadgeKey, string> = {
     approval: "/supervisor/approval/get-pending-count",
     lowStock: "/inventory/get-low-stock-count",
+    passwordReset: "/admin/password-reset/get-pending-count",
 };
 
 /** Kalimat lengkap untuk pembaca layar, supaya angkanya tidak berdiri sendiri. */
 export const menuBadgeLabel: Record<MenuBadgeKey, string> = {
     approval: "menunggu tindakan",
     lowStock: "baris stok perlu dipesan ulang",
+    passwordReset: "permintaan reset kata sandi menunggu",
 };
 
 export interface MenuItem {
@@ -105,7 +108,8 @@ const adminStockViewItems: MenuItem[] = stockViewItems.map((item) =>
 );
 
 const systemItems: MenuItem[] = [
-    { path: "audit-log", label: "Audit log", icon: ScrollText, groupLabel: "Sistem" },
+    { path: "password-reset", label: "Reset kata sandi", icon: KeyRound, groupLabel: "Sistem", badgeKey: "passwordReset" },
+    { path: "audit-log", label: "Audit log", icon: ScrollText },
     { path: "system-setting", label: "Pengaturan", icon: Settings },
 ];
 

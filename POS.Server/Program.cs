@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Serialization;
 using POS.DataLayer.Services;
@@ -15,7 +16,7 @@ using POS.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-AppSettings.Initialize(builder.Configuration);
+AppSettings.Initialize(builder.Configuration, builder.Environment);
 
 // Format tanggal dan angka mengikuti kebiasaan Indonesia pada seluruh proses server.
 CultureInfo culture = new(DataLayerSettings.CultureName);
@@ -63,12 +64,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
-// Pembatasan laju hanya dipasang pada endpoint masuk. Di situlah percobaan menebak
-// kata sandi terjadi, dan di situ pula satu permintaan berarti satu pemeriksaan hash
-// yang mahal. Endpoint lain sudah dilindungi token (PRD bagian 46).
+// Pembatasan laju dipasang pada endpoint autentikasi yang terbuka tanpa token: masuk
+// dan permintaan pengaturan ulang kata sandi. Di situlah percobaan menebak kata sandi
+// dan penyisiran nama pengguna terjadi. Endpoint lain sudah dilindungi token (PRD bagian 46).
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddPolicy(AppData.RateLimitPolicyLogin, context => RateLimitPartition.GetFixedWindowLimiter(
+    options.AddPolicy(AppData.RateLimitPolicyAuth, context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions
         {
@@ -81,7 +82,7 @@ builder.Services.AddRateLimiter(options =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         await context.HttpContext.Response.WriteAsync(
-            "Terlalu banyak percobaan masuk dari perangkat ini. Tunggu satu menit lalu coba lagi.",
+            "Terlalu banyak permintaan dari perangkat ini. Tunggu satu menit lalu coba lagi.",
             cancellationToken);
     };
 });
@@ -105,15 +106,44 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+app.UseHttpsRedirection();
+
 app.UseDefaultFiles();
+
+// Gambar yang diunggah pengguna disajikan sebagai berkas statis dari folder tersendiri.
+// Ini satu-satunya jalur GET aplikasi selain SPA, karena browser memang harus membuka
+// alamat gambarnya sendiri lewat atribut src.
+//
+// Ditempatkan sebelum UseRouting dengan sengaja: middleware berkas statis melewati
+// permintaan begitu saja bila sebuah endpoint sudah terpilih, dan permintaan tanpa
+// endpoint terkena FallbackPolicy sehingga gambarnya akan dibalas 401.
+FileMethods.EnsureFolder();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(AppSettings.WebRootPath, AppSettings.UploadFolder)),
+    RequestPath = $"/{AppSettings.UploadFolder}",
+
+    // Hanya tipe yang dikenal yang disajikan, sehingga berkas selain gambar tidak
+    // pernah terkirim meskipun entah bagaimana sampai berada di folder itu.
+    ServeUnknownFileTypes = false,
+
+    // Tanpa ini browser boleh menebak sendiri tipe berkasnya dan memperlakukan gambar
+    // sebagai HTML.
+    OnPrepareResponse = context =>
+        context.Context.Response.Headers.XContentTypeOptions = "nosniff",
+});
+
+// Urutan sisa pipeline ditulis lengkap, bukan diserahkan ke penyisipan otomatis
+// WebApplication, supaya posisi berkas statis di atas benar-benar terjaga.
+app.UseRouting();
+
 app.MapStaticAssets().AllowAnonymous();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi().AllowAnonymous();
 }
-
-app.UseHttpsRedirection();
 
 if (AppSettings.AllowedOrigins.Length > 0)
 {

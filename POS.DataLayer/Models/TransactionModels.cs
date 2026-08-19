@@ -151,6 +151,10 @@ public class ReceiptSettingModel
     public string StoreName { get; set; } = string.Empty;
     public string StoreAddress { get; set; } = string.Empty;
     public string StorePhone { get; set; } = string.Empty;
+
+    /// <summary>Alamat logo toko, kosong bila belum diunggah.</summary>
+    public string StoreLogoUrl { get; set; } = string.Empty;
+
     public string Header { get; set; } = string.Empty;
     public string Footer { get; set; } = string.Empty;
     public string ThankYouMessage { get; set; } = string.Empty;

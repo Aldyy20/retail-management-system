@@ -1,5 +1,6 @@
 using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using POS.DataLayer.Models.Base;
 using POS.DataLayer.Services;
@@ -97,6 +98,38 @@ public abstract class BaseApiController : ControllerBase
         }
 
         return AppErrorMessages.ErrorUnexpected;
+    }
+
+    /// <summary>
+    /// Menerjemahkan kegagalan Identity ke Bahasa Indonesia.
+    ///
+    /// Identity mengembalikan pesannya dalam Bahasa Inggris, dan pesan itu sampai apa adanya
+    /// ke layar pengguna kalau tidak diterjemahkan di sini. Kode yang belum dikenali
+    /// dilewatkan apa adanya, supaya kegagalan baru tetap terlihat alih-alih tertelan.
+    /// </summary>
+    protected static string TranslateIdentityErrors(IdentityResult result)
+    {
+        List<string> messages = [];
+
+        foreach (IdentityError error in result.Errors)
+        {
+            messages.Add(error.Code switch
+            {
+                "DuplicateUserName" => "Nama pengguna tersebut sudah dipakai akun lain.",
+                "DuplicateEmail" => "Email tersebut sudah dipakai akun lain.",
+                "PasswordMismatch" => "Kata sandi lama yang Anda masukkan salah.",
+                "PasswordTooShort" => "Kata sandi minimal 8 karakter.",
+                "PasswordRequiresDigit" => "Kata sandi harus memuat angka.",
+                "PasswordRequiresUpper" => "Kata sandi harus memuat huruf kapital.",
+                "PasswordRequiresLower" => "Kata sandi harus memuat huruf kecil.",
+                "PasswordRequiresUniqueChars" => "Kata sandi harus memuat lebih banyak karakter yang berbeda.",
+                "InvalidToken" => "Proses ini sudah tidak berlaku. Ulangi dari awal.",
+                "InvalidUserName" => "Nama pengguna hanya boleh berisi huruf, angka, titik, dan garis bawah.",
+                _ => error.Description,
+            });
+        }
+
+        return messages.Count > 0 ? string.Join(" ", messages) : AppErrorMessages.ErrorUnexpected;
     }
 
     /// <summary>Menggabungkan pesan validasi model menjadi satu baris untuk ditampilkan frontend.</summary>

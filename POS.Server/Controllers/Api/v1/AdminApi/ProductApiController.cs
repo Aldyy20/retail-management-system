@@ -6,6 +6,7 @@ using POS.DataLayer.Models.Base;
 using POS.DataLayer.Services;
 using POS.Server.Controllers.Api.v1.BaseApi;
 using POS.Server.Data;
+using POS.Server.Models;
 using POS.Server.Entities;
 using POS.Server.Services;
 
@@ -56,6 +57,7 @@ public class ProductApiController : BaseApiController
                               CostPrice = item.CostPrice,
                               SellingPrice = item.SellingPrice,
                               MinimumStock = item.MinimumStock,
+                              PhotoFileName = item.PhotoFileName,
                               IsActive = item.IsActive,
                               DateCreated = item.DateCreated,
                               DateModified = item.DateModified,
@@ -110,6 +112,7 @@ public class ProductApiController : BaseApiController
                 CostPrice = x.CostPrice,
                 SellingPrice = x.SellingPrice,
                 MinimumStock = x.MinimumStock,
+                PhotoFileName = x.PhotoFileName,
                 IsActive = x.IsActive,
             })
             .FirstOrDefaultAsync();
@@ -151,6 +154,7 @@ public class ProductApiController : BaseApiController
                 CostPrice = x.CostPrice,
                 SellingPrice = x.SellingPrice,
                 MinimumStock = x.MinimumStock,
+                PhotoFileName = x.PhotoFileName,
                 IsActive = x.IsActive,
                 DateCreated = x.DateCreated,
                 DateModified = x.DateModified,
@@ -233,6 +237,13 @@ public class ProductApiController : BaseApiController
         entity.ApplyCreateEdit(model);
         entity.Sku = string.IsNullOrWhiteSpace(model.Sku) ? await GenerateSkuAsync() : model.Sku.Trim().ToUpperInvariant();
 
+        string? photoMessage = ApplyPhoto(entity, model);
+
+        if (photoMessage != null)
+        {
+            return BadRequest(photoMessage);
+        }
+
         _db.Product.Add(entity);
 
         // Harga awal ikut tercatat sebagai histori, sehingga setiap produk punya
@@ -290,11 +301,19 @@ public class ProductApiController : BaseApiController
 
         decimal previousCostPrice = entity.CostPrice;
         decimal previousSellingPrice = entity.SellingPrice;
+        string? previousPhotoFileName = entity.PhotoFileName;
         string oldValue = $"Modal {previousCostPrice.ToStrMoney()}, Jual {previousSellingPrice.ToStrMoney()}";
 
         entity.ApplyCreateEdit(model);
         entity.ModifiedById = CurrentUserId;
         entity.DateModified = DateTime.Now;
+
+        string? photoMessage = ApplyPhoto(entity, model);
+
+        if (photoMessage != null)
+        {
+            return BadRequest(photoMessage);
+        }
 
         // SKU tidak boleh berubah setelah produk terbentuk, karena sudah dipakai
         // sebagai acuan pada nota dan catatan pergerakan stok.
@@ -324,6 +343,13 @@ public class ProductApiController : BaseApiController
         catch (DbUpdateException exception)
         {
             return BadRequest(TranslateDbUpdateError(exception, "SKU atau Barcode"));
+        }
+
+        // Foto lama baru dihapus setelah datanya benar-benar tersimpan, supaya penyimpanan
+        // yang gagal tidak meninggalkan produk yang menunjuk berkas yang sudah tiada.
+        if (previousPhotoFileName != entity.PhotoFileName)
+        {
+            FileMethods.Delete(AppData.UploadFolderProduct, previousPhotoFileName);
         }
 
         return Ok(isPriceChanged
@@ -358,7 +384,59 @@ public class ProductApiController : BaseApiController
             return BadRequest(TranslateDbUpdateError(exception, "SKU"));
         }
 
+        FileMethods.Delete(AppData.UploadFolderProduct, entity.PhotoFileName);
+
         return Ok("Produk berhasil dihapus.");
+    }
+
+    /// <summary>
+    /// Menyimpan satu foto barang lalu mengembalikan nama berkasnya. Berkas disimpan lebih
+    /// dulu, produknya menyusul: nama inilah yang dikirim balik frontend saat menyimpan.
+    /// Selama produk belum disimpan, berkas ini belum terpakai siapa pun.
+    /// </summary>
+    [HttpPost("upload-photo")]
+    [RequestSizeLimit(AppData.MaxImageSizeByte + FileMethods.MultipartOverheadByte)]
+    public async Task<IActionResult> UploadPhotoAsync([FromForm] UploadImageRequestModel model)
+    {
+        string? oversizeMessage = FileMethods.GetOversizeMessage(Request.ContentLength);
+
+        if (oversizeMessage != null)
+        {
+            return BadRequest(oversizeMessage);
+        }
+
+        (string? fileName, string? errorMessage) = await FileMethods.SaveImageAsync(model?.File, AppData.UploadFolderProduct);
+
+        if (fileName == null)
+        {
+            return BadRequest(errorMessage);
+        }
+
+        return Ok(new UploadImageResponseModel
+        {
+            FileName = fileName,
+            FileUrl = FileMethods.GetPublicUrl(AppData.UploadFolderProduct, fileName),
+        });
+    }
+
+    /// <summary>
+    /// Menetapkan foto produk dari nama berkas yang dikirim frontend.
+    ///
+    /// Nama berkas selalu dicocokkan ulang ke folder unggahan, sehingga frontend hanya
+    /// dapat menunjuk berkas yang memang sudah diunggah lewat endpoint di atas, bukan
+    /// menuliskan nama atau jalur sembarangan.
+    /// </summary>
+    private static string? ApplyPhoto(Product entity, CreateEditProductModel model)
+    {
+        string? newFileName = string.IsNullOrWhiteSpace(model.PhotoFileName) ? null : model.PhotoFileName.Trim();
+
+        if (newFileName != null && !FileMethods.Exists(AppData.UploadFolderProduct, newFileName))
+        {
+            return "Foto barang tidak ditemukan di server. Unggah ulang fotonya lalu simpan lagi.";
+        }
+
+        entity.PhotoFileName = newFileName;
+        return null;
     }
 
     /// <summary>

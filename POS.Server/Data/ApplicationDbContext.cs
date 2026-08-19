@@ -68,6 +68,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     #region Approval
 
     public DbSet<ApprovalRequest> ApprovalRequest => Set<ApprovalRequest>();
+    public DbSet<PasswordResetRequest> PasswordResetRequest => Set<PasswordResetRequest>();
 
     #endregion
 
@@ -133,5 +134,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         builder.ApplyConfiguration(new VoucherConfiguration());
         builder.ApplyConfiguration(new VoucherUsageConfiguration());
         builder.ApplyConfiguration(new ApprovalRequestConfiguration());
+        builder.ApplyConfiguration(new PasswordResetRequestConfiguration());
     }
 }

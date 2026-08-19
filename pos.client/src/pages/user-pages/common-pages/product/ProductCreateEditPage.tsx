@@ -5,6 +5,7 @@ import { api } from "@/services/api";
 import { getAxiosErrorMessage, formatMoney } from "@/services/global.methods";
 import { useSnackbar } from "@/components/ui/Snackbar";
 import { FormPageShell } from "@/components/common/FormPageShell";
+import { ImageUploadField } from "@/components/common/ImageUploadField";
 import { TextField } from "@/components/ui/TextField";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
@@ -94,6 +95,7 @@ export default function ProductCreateEditPage() {
     const margin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
     const isPriceChanged = initialSellingPrice !== null && sellingPrice !== initialSellingPrice;
 
+    const photoFileName = watch("PhotoFileName") ?? null;
     const hasMasterData = listCategory.length > 0 && listUnit.length > 0;
 
     return (
@@ -144,6 +146,15 @@ export default function ProductCreateEditPage() {
                     {...register("Barcode")}
                 />
             </div>
+
+            <ImageUploadField
+                label="Foto barang"
+                helperText="Opsional. JPG, PNG, atau WEBP, maksimal 3 MB. Foto tampil pada daftar produk dan halaman rinciannya."
+                uploadUrl="/admin/product/upload-photo"
+                folder="product"
+                value={photoFileName}
+                onChange={(fileName) => setValue("PhotoFileName", fileName, { shouldDirty: true })}
+            />
 
             <div className="grid gap-5 medium:grid-cols-2">
                 <Select

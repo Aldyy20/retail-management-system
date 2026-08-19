@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { ErrorAlert } from "@/components/common/ErrorAlert";
 import { EmptyDataAlert } from "@/components/common/EmptyDataAlert";
+import { ImageUploadField } from "@/components/common/ImageUploadField";
 import { Button } from "@/components/ui/Button";
 import { Surface } from "@/components/ui/Surface";
 import { Switch } from "@/components/ui/Switch";
@@ -202,6 +203,19 @@ function SettingField({ setting, value, onChange }: SettingFieldProps) {
                 description={helperText}
                 checked={value === "True" || value === "true"}
                 onChange={(event) => onChange(event.target.checked ? "True" : "False")}
+            />
+        );
+    }
+
+    if (setting.ValueType === "image") {
+        return (
+            <ImageUploadField
+                label={setting.DisplayName}
+                helperText={helperText}
+                uploadUrl="/admin/system-setting/upload-logo"
+                folder="store"
+                value={value || null}
+                onChange={(fileName) => onChange(fileName ?? "")}
             />
         );
     }

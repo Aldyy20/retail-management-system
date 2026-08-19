@@ -32,6 +32,15 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
+    /*
+     * Unggahan berkas dikirim sebagai multipart dengan pembatas yang dibuat browser.
+     * Header JSON bawaan harus dilepas untuk permintaan itu, karena kalau ikut terkirim
+     * pembatasnya hilang dan server menerima permintaan tanpa berkas sama sekali.
+     */
+    if (config.data instanceof FormData) {
+        delete config.headers["Content-Type"];
+    }
+
     return config;
 });
 

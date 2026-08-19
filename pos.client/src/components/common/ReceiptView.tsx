@@ -22,6 +22,11 @@ export function ReceiptView({ transaction }: ReceiptViewProps) {
             style={{ fontSize: "12px", lineHeight: 1.5 }}
         >
             <div className="text-center">
+                {/* Logo dibatasi tingginya supaya tidak mendorong isi nota keluar dari kertas. */}
+                {receipt.StoreLogoUrl ? (
+                    <img src={receipt.StoreLogoUrl} alt="" className="mx-auto mb-1 max-h-12 object-contain" />
+                ) : null}
+
                 <p className="text-[14px] font-semibold uppercase">{receipt.StoreName}</p>
                 {receipt.StoreAddress ? <p>{receipt.StoreAddress}</p> : null}
                 {receipt.StorePhone ? <p>{receipt.StorePhone}</p> : null}

@@ -51,6 +51,11 @@ export default defineConfig({
             '^/api': {
                 target,
                 secure: false
+            },
+            // Gambar unggahan disajikan backend sebagai berkas statis, bukan oleh Vite.
+            '^/uploads': {
+                target,
+                secure: false
             }
         },
         port: parseInt(env.DEV_SERVER_PORT || '57987'),

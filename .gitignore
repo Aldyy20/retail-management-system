@@ -28,3 +28,7 @@ Thumbs.db
 # Secret lokal (JWT signing key, password database, password admin awal).
 # Salin appsettings.Development.example.json menjadi appsettings.Development.json lalu isi nilainya.
 POS.Server/appsettings.Development.json
+
+# Berkas yang diunggah pengguna. Isinya milik masing-masing pemasangan, bukan bagian
+# dari kode, dan foldernya dibuat ulang otomatis saat server dijalankan.
+POS.Server/wwwroot/uploads/

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using POS.Server.Data;
@@ -11,9 +12,11 @@ using POS.Server.Data;
 namespace POS.Server.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260819065334_ProductPhoto")]
+    partial class ProductPhoto
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -744,64 +747,6 @@ namespace POS.Server.Data.Migrations
                     b.HasIndex("IdMember", "DateCreated");
 
                     b.ToTable("member_point_transactions", (string)null);
-                });
-
-            modelBuilder.Entity("POS.Server.Entities.PasswordResetRequest", b =>
-                {
-                    b.Property<string>("IdPasswordResetRequest")
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)");
-
-                    b.Property<string>("CreatedById")
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("HandledById")
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)");
-
-                    b.Property<DateTime?>("HandledDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<string>("HandledNote")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("IdUser")
-                        .IsRequired()
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("IdPasswordResetRequest");
-
-                    b.HasIndex("HandledById");
-
-                    b.HasIndex("IdUser")
-                        .IsUnique()
-                        .HasFilter("\"Status\" = 2");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("password_reset_requests", (string)null);
                 });
 
             modelBuilder.Entity("POS.Server.Entities.PaymentMethod", b =>
@@ -1822,24 +1767,6 @@ namespace POS.Server.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Member");
-                });
-
-            modelBuilder.Entity("POS.Server.Entities.PasswordResetRequest", b =>
-                {
-                    b.HasOne("POS.Server.Entities.ApplicationUser", "HandledByUser")
-                        .WithMany()
-                        .HasForeignKey("HandledById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("POS.Server.Entities.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("IdUser")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("HandledByUser");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("POS.Server.Entities.PriceHistory", b =>

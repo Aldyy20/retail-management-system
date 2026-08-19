@@ -67,6 +67,7 @@ export interface ReceiptSettingModel {
     StoreName: string;
     StoreAddress: string;
     StorePhone: string;
+    StoreLogoUrl: string;
     Header: string;
     Footer: string;
     ThankYouMessage: string;

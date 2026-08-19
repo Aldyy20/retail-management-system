@@ -228,11 +228,16 @@ public static class TransactionMethods
     /// <summary>Isi nota yang dapat diubah admin lewat halaman pengaturan.</summary>
     public static async Task<ReceiptSettingModel> GetReceiptSettingAsync(ApplicationDbContext db)
     {
+        string logoFileName = await GlobalList.GetSettingTextAsync(db, AppData.SettingStoreLogo);
+
         return new ReceiptSettingModel
         {
             StoreName = await GlobalList.GetSettingTextAsync(db, AppData.SettingStoreName, "Toko Saya"),
             StoreAddress = await GlobalList.GetSettingTextAsync(db, AppData.SettingStoreAddress),
             StorePhone = await GlobalList.GetSettingTextAsync(db, AppData.SettingStorePhone),
+            StoreLogoUrl = FileMethods.Exists(AppData.UploadFolderStore, logoFileName)
+                ? FileMethods.GetPublicUrl(AppData.UploadFolderStore, logoFileName)
+                : string.Empty,
             Header = await GlobalList.GetSettingTextAsync(db, AppData.SettingReceiptHeader),
             Footer = await GlobalList.GetSettingTextAsync(db, AppData.SettingReceiptFooter),
             ThankYouMessage = await GlobalList.GetSettingTextAsync(db, AppData.SettingReceiptThankYou),

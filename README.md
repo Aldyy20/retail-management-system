@@ -57,6 +57,26 @@ dotnet run --project POS.Server
 Vite dev server ikut dijalankan lewat SPA proxy. Login pertama memakai `SeedAdmin:UserName`
 dan `SeedAdmin:Password` dari konfigurasi Anda.
 
+## Deployment
+
+```bash
+dotnet publish POS.Server -c Release -o /path/ke/rilis
+```
+
+Perintah itu sekaligus membangun SPA ke dalam `wwwroot`, jadi tidak ada langkah build
+frontend terpisah. Isi konfigurasi lewat environment variable, bukan berkas:
+
+```bash
+ConnectionStrings__DefaultConnection=...
+Jwt__Secret=...          # minimal 32 karakter, server menolak start bila lebih pendek
+SeedAdmin__Password=...  # seeding gagal bila kosong
+```
+
+**Folder `wwwroot/uploads` harus ikut dicadangkan dan dipindahkan bersama database.**
+Foto produk dan logo toko tinggal di situ, sengaja tidak ikut ke hasil publish, dan
+tidak akan kembali dari `pg_dump`. Isi database yang menyebut nama berkas tanpa berkasnya
+akan tampil sebagai produk tanpa foto.
+
 ## Prinsip yang Dipegang
 
 - Backend adalah sumber kebenaran. Harga, diskon, point, voucher, stok, dan total
