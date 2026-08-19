@@ -20,6 +20,17 @@ const SupplierCreateEditPage = lazy(() => import("@/pages/user-pages/common-page
 const EmployeePage = lazy(() => import("@/pages/user-pages/common-pages/employee/EmployeePage"));
 const EmployeeCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages/employee/EmployeeCreateEditPage"));
 
+// Member Pages
+const MemberPage = lazy(() => import("@/pages/user-pages/common-pages/member/MemberPage"));
+const MemberCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages/member/MemberCreateEditPage"));
+const MemberDetailsPage = lazy(() => import("@/pages/user-pages/common-pages/member/MemberDetailsPage"));
+const PointRedemptionRulePage = lazy(
+    () => import("@/pages/user-pages/common-pages/point-redemption-rule/PointRedemptionRulePage"),
+);
+const PointRedemptionRuleCreateEditPage = lazy(
+    () => import("@/pages/user-pages/common-pages/point-redemption-rule/PointRedemptionRuleCreateEditPage"),
+);
+
 // Inventory Pages
 const InventoryPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/InventoryPage"));
 const StockMovementPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/StockMovementPage"));
@@ -58,6 +69,17 @@ export const adminRoutes: RouteObject[] = [
     { path: "employee", element: <EmployeePage /> },
     { path: "employee/create", element: <EmployeeCreateEditPage /> },
     { path: "employee/edit/:id", element: <EmployeeCreateEditPage /> },
+
+    // Member Routes
+    { path: "member", element: <MemberPage /> },
+    { path: "member/create", element: <MemberCreateEditPage /> },
+    { path: "member/edit/:id", element: <MemberCreateEditPage /> },
+    { path: "member/details/:id", element: <MemberDetailsPage /> },
+
+    // Point Redemption Rule Routes
+    { path: "point-redemption-rule", element: <PointRedemptionRulePage /> },
+    { path: "point-redemption-rule/create", element: <PointRedemptionRuleCreateEditPage /> },
+    { path: "point-redemption-rule/edit/:id", element: <PointRedemptionRuleCreateEditPage /> },
 
     // Inventory Routes
     { path: "inventory", element: <InventoryPage /> },

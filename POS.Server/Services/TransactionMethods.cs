@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using POS.DataLayer.Models;
 using POS.Server.Data;
+using POS.Server.Entities;
 
 namespace POS.Server.Services;
 
@@ -21,7 +22,9 @@ public static class TransactionMethods
     public static async Task<CalculatedCartModel> CalculateAsync(
         ApplicationDbContext db,
         string idWarehouse,
-        List<CartItemModel> listItem)
+        List<CartItemModel> listItem,
+        string? idMember = null,
+        string? idPointRedemptionRule = null)
     {
         CalculatedCartModel result = new();
 
@@ -96,12 +99,81 @@ public static class TransactionMethods
         result.SubtotalAmount = result.ListItem.Sum(x => x.UnitPrice * x.Quantity);
         result.DiscountAmount = result.ListItem.Sum(x => x.DiscountAmount);
         result.TotalQuantity = result.ListItem.Sum(x => x.Quantity);
+
+        await ApplyMemberAsync(db, result, idMember, idPointRedemptionRule);
+
+        // Urutan potongan mengikuti aturan yang ditetapkan PRD bagian 25:
+        // harga produk, diskon produk, voucher, lalu penukaran point.
         result.TotalAmount = result.SubtotalAmount
             - result.DiscountAmount
             - result.VoucherDiscountAmount
             - result.PointDiscountAmount;
 
+        result.PointEarned = await LoyaltyMethods.CalculateEarnedPointAsync(db, result.TotalAmount);
+
         return result;
+    }
+
+    /// <summary>
+    /// Melekatkan member pada keranjang dan menerapkan penukaran point bila dipilih.
+    /// Member diabaikan sepenuhnya bila sistem member sedang dinonaktifkan (PRD BR-005).
+    /// </summary>
+    private static async Task ApplyMemberAsync(
+        ApplicationDbContext db,
+        CalculatedCartModel result,
+        string? idMember,
+        string? idPointRedemptionRule)
+    {
+        if (string.IsNullOrWhiteSpace(idMember) || !await LoyaltyMethods.IsMemberEnabledAsync(db))
+        {
+            return;
+        }
+
+        Member? member = await db.Member.FirstOrDefaultAsync(x => x.IdMember == idMember && x.IsActive);
+
+        if (member == null)
+        {
+            result.ListWarning.Add("Member yang dipilih tidak ditemukan atau sedang dinonaktifkan.");
+            return;
+        }
+
+        result.Member = new QueryMemberModel
+        {
+            IdMember = member.IdMember,
+            PhoneNumber = member.PhoneNumber,
+            MemberName = member.MemberName,
+            PointBalance = member.PointBalance,
+            TotalSpending = member.TotalSpending,
+            TotalTransaction = member.TotalTransaction,
+            IsActive = member.IsActive,
+        };
+
+        decimal amountBeforePoint = result.SubtotalAmount - result.DiscountAmount - result.VoucherDiscountAmount;
+        result.ListRedemptionOption = await LoyaltyMethods.GetRedemptionOptionsAsync(db, member, amountBeforePoint);
+
+        if (string.IsNullOrWhiteSpace(idPointRedemptionRule))
+        {
+            return;
+        }
+
+        PointRedemptionOptionModel? option = result.ListRedemptionOption
+            .FirstOrDefault(x => x.IdPointRedemptionRule == idPointRedemptionRule);
+
+        if (option == null)
+        {
+            result.ListWarning.Add("Aturan penukaran point yang dipilih tidak tersedia.");
+            return;
+        }
+
+        if (!option.IsAvailable)
+        {
+            result.ListWarning.Add(option.UnavailableReason ?? "Penukaran point tidak dapat dipakai.");
+            return;
+        }
+
+        result.IdPointRedemptionRule = option.IdPointRedemptionRule;
+        result.PointDiscountAmount = option.DiscountAmount;
+        result.PointRedeemed = option.PointRequired;
     }
 
     /// <summary>

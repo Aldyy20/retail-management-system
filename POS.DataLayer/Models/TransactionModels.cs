@@ -37,6 +37,16 @@ public class BaseTransactionModel : TransactionKeyModel, IBaseDataInfo
 
     public decimal PointDiscountAmount { get; set; }
 
+    /// <summary>Member yang berbelanja. Kosong berarti pembeli umum.</summary>
+    [StringLength(36)]
+    public string? IdMember { get; set; }
+
+    /// <summary>Point yang diperoleh dari transaksi ini menurut aturan yang berlaku saat itu.</summary>
+    public int PointEarned { get; set; }
+
+    /// <summary>Point yang ditukarkan menjadi potongan pada transaksi ini.</summary>
+    public int PointRedeemed { get; set; }
+
     public decimal TotalAmount { get; set; }
 
     [Required]
@@ -73,6 +83,8 @@ public class QueryTransactionModel : TableTransactionModel
     public string WarehouseName { get; set; } = string.Empty;
     public string PaymentMethodName { get; set; } = string.Empty;
     public string? CashierName { get; set; }
+    public string? MemberName { get; set; }
+    public string? MemberPhoneNumber { get; set; }
 
     public decimal GrossProfit => TotalAmount - TotalCost;
 

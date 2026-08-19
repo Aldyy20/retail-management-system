@@ -24,6 +24,14 @@ public class CalculateCartRequestModel
     [StringLength(36)]
     public string IdWarehouse { get; set; } = string.Empty;
 
+    /// <summary>Member yang berbelanja. Kosong berarti pembeli umum.</summary>
+    [StringLength(36)]
+    public string? IdMember { get; set; }
+
+    /// <summary>Aturan penukaran point yang dipilih kasir. Kosong berarti tidak menukar point.</summary>
+    [StringLength(36)]
+    public string? IdPointRedemptionRule { get; set; }
+
     public List<CartItemModel> ListItem { get; set; } = [];
 }
 
@@ -65,6 +73,19 @@ public class CalculatedCartModel
     /// <summary>Peringatan yang tidak menghalangi, misalnya stok kurang untuk satu baris.</summary>
     public List<string> ListWarning { get; set; } = [];
 
+    /// <summary>Member yang sedang dipakai pada keranjang ini, bila ada.</summary>
+    public QueryMemberModel? Member { get; set; }
+
+    /// <summary>Pilihan penukaran point untuk keranjang ini. Kosong bila tanpa member.</summary>
+    public List<PointRedemptionOptionModel> ListRedemptionOption { get; set; } = [];
+
+    public string? IdPointRedemptionRule { get; set; }
+
+    /// <summary>Point yang akan diperoleh member dari transaksi ini.</summary>
+    public int PointEarned { get; set; }
+
+    public int PointRedeemed { get; set; }
+
     public string StrSubtotalAmount => SubtotalAmount.ToStrMoney();
     public string StrDiscountAmount => DiscountAmount.ToStrMoney();
     public string StrTotalAmount => TotalAmount.ToStrMoney();
@@ -86,6 +107,12 @@ public class CreateTransactionRequestModel
 
     [StringLength(512)]
     public string? Note { get; set; }
+
+    [StringLength(36)]
+    public string? IdMember { get; set; }
+
+    [StringLength(36)]
+    public string? IdPointRedemptionRule { get; set; }
 
     public List<CartItemModel> ListItem { get; set; } = [];
 }
@@ -109,4 +136,12 @@ public class CashierInitModel
     public List<QueryPaymentMethodModel> ListPaymentMethod { get; set; } = [];
     public string DefaultWarehouseId { get; set; } = string.Empty;
     public string StoreName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Menentukan apakah panel member muncul di layar kasir. Bila sistem member
+    /// dinonaktifkan admin, kasir tidak melihat menu member sama sekali (PRD BR-005).
+    /// </summary>
+    public bool IsMemberEnabled { get; set; }
+
+    public bool IsLoyaltyEnabled { get; set; }
 }

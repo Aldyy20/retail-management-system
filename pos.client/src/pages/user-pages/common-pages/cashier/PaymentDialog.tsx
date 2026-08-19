@@ -13,6 +13,8 @@ interface PaymentDialogProps {
     cart: CalculatedCartModel;
     idWarehouse: string;
     listItem: CartItemModel[];
+    idMember: string | null;
+    idPointRedemptionRule: string | null;
     listPaymentMethod: QueryPaymentMethodModel[];
     onClose: () => void;
     onPaid: (idTransaction: string, invoiceNumber: string) => void;
@@ -26,6 +28,8 @@ export function PaymentDialog({
     cart,
     idWarehouse,
     listItem,
+    idMember,
+    idPointRedemptionRule,
     listPaymentMethod,
     onClose,
     onPaid,
@@ -59,6 +63,8 @@ export function PaymentDialog({
                 `/${rolePath}/cashier/create-transaction`,
                 {
                     IdWarehouse: idWarehouse,
+                    IdMember: idMember,
+                    IdPointRedemptionRule: idPointRedemptionRule,
                     PaymentMethodCode: paymentMethodCode,
                     PaidAmount: paid,
                     Note: note || null,

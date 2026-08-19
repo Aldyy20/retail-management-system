@@ -48,6 +48,14 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     #endregion
 
+    #region Member dan Loyalty
+
+    public DbSet<Member> Member => Set<Member>();
+    public DbSet<MemberPointTransaction> MemberPointTransaction => Set<MemberPointTransaction>();
+    public DbSet<PointRedemptionRule> PointRedemptionRule => Set<PointRedemptionRule>();
+
+    #endregion
+
     #region Approval
 
     public DbSet<ApprovalRequest> ApprovalRequest => Set<ApprovalRequest>();
@@ -108,6 +116,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         builder.ApplyConfiguration(new PaymentMethodConfiguration());
         builder.ApplyConfiguration(new TransactionConfiguration());
         builder.ApplyConfiguration(new TransactionDetailConfiguration());
+        builder.ApplyConfiguration(new MemberConfiguration());
+        builder.ApplyConfiguration(new MemberPointTransactionConfiguration());
+        builder.ApplyConfiguration(new PointRedemptionRuleConfiguration());
         builder.ApplyConfiguration(new ApprovalRequestConfiguration());
     }
 }

@@ -16,6 +16,7 @@ public class Transaction : TableTransactionModel
     public virtual Warehouse? Warehouse { get; set; }
     public virtual PaymentMethod? PaymentMethod { get; set; }
     public virtual ApplicationUser? Cashier { get; set; }
+    public virtual Member? Member { get; set; }
     public virtual ICollection<TransactionDetail> ListDetail { get; set; } = [];
 }
 
@@ -90,6 +91,14 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.HasOne(x => x.Cashier)
             .WithMany()
             .HasForeignKey(x => x.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Member yang sudah pernah berbelanja tidak dapat dihapus, karena notanya
+        // masih merujuk ke sana.
+        builder.Property(x => x.IdMember).HasMaxLength(36);
+        builder.HasOne(x => x.Member)
+            .WithMany()
+            .HasForeignKey(x => x.IdMember)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -150,6 +150,35 @@ public static class ApprovalMethods
             }
         }
 
+        // Point yang sempat diperoleh maupun ditukarkan ikut dikembalikan, supaya saldo
+        // member tidak menyimpan hasil dari transaksi yang sudah tidak berlaku.
+        if (transaction.IdMember != null && (transaction.PointEarned > 0 || transaction.PointRedeemed > 0))
+        {
+            Member? member = await db.Member.FirstOrDefaultAsync(x => x.IdMember == transaction.IdMember);
+
+            if (member == null)
+            {
+                return "Member pada transaksi ini tidak ditemukan.";
+            }
+
+            if (transaction.PointEarned > 0)
+            {
+                LoyaltyMethods.ApplyPointMovement(db, member, PointMovementType.Adjustment, -transaction.PointEarned,
+                    "Pembatalan Transaksi", transaction.IdTransaction, transaction.InvoiceNumber,
+                    "Point ditarik kembali karena transaksi dibatalkan.", userId);
+            }
+
+            if (transaction.PointRedeemed > 0)
+            {
+                LoyaltyMethods.ApplyPointMovement(db, member, PointMovementType.Adjustment, transaction.PointRedeemed,
+                    "Pembatalan Transaksi", transaction.IdTransaction, transaction.InvoiceNumber,
+                    "Point dikembalikan karena transaksi dibatalkan.", userId);
+            }
+
+            member.TotalTransaction = Math.Max(0, member.TotalTransaction - 1);
+            member.TotalSpending = Math.Max(0, member.TotalSpending - transaction.TotalAmount);
+        }
+
         transaction.Status = DataStatus.Void;
         transaction.ModifiedById = userId;
         transaction.DateModified = DateTime.Now;

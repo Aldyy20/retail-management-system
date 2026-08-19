@@ -12,6 +12,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Surface } from "@/components/ui/Surface";
 import { TextField } from "@/components/ui/TextField";
 import { PaymentDialog } from "@/pages/user-pages/common-pages/cashier/PaymentDialog";
+import { MemberPanel } from "@/pages/user-pages/common-pages/cashier/MemberPanel";
 import type {
     CalculatedCartModel,
     CartItemModel,
@@ -45,6 +46,8 @@ export default function CashierPage() {
     const [cart, setCart] = useState<CalculatedCartModel | null>(null);
     const [cartErrorMessage, setCartErrorMessage] = useState<string | null>(null);
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+    const [idMember, setIdMember] = useState<string | null>(null);
+    const [idPointRedemptionRule, setIdPointRedemptionRule] = useState<string | null>(null);
 
     const loadInitData = useCallback(() => {
         return api
@@ -94,6 +97,8 @@ export default function CashierPage() {
         return api
             .post<CalculatedCartModel>(`/${rolePath}/cashier/calculate`, {
                 IdWarehouse: idWarehouse,
+                IdMember: idMember,
+                IdPointRedemptionRule: idPointRedemptionRule,
                 ListItem: listItem,
             })
             .then((response) => {
@@ -101,7 +106,7 @@ export default function CashierPage() {
                 setCartErrorMessage(null);
             })
             .catch((error) => setCartErrorMessage(getAxiosErrorMessage(error)));
-    }, [idWarehouse, listItem, rolePath]);
+    }, [idWarehouse, listItem, rolePath, idMember, idPointRedemptionRule]);
 
     useEffect(() => {
         calculateCart();
@@ -140,7 +145,15 @@ export default function CashierPage() {
         setListItem([]);
         setCart(null);
         setCartErrorMessage(null);
+        setIdMember(null);
+        setIdPointRedemptionRule(null);
         searchInputRef.current?.focus();
+    };
+
+    /** Mengganti member membatalkan penukaran point, karena saldonya berbeda. */
+    const handleSelectMember = (nextIdMember: string | null) => {
+        setIdPointRedemptionRule(null);
+        setIdMember(nextIdMember);
     };
 
     const handlePaid = (idTransaction: string, invoiceNumber: string) => {
@@ -268,6 +281,18 @@ export default function CashierPage() {
                         ) : null}
                     </div>
 
+                    {init?.IsMemberEnabled ? (
+                        <MemberPanel
+                            member={cart?.Member ?? null}
+                            listRedemptionOption={cart?.ListRedemptionOption ?? []}
+                            idPointRedemptionRule={idPointRedemptionRule}
+                            pointEarned={cart?.PointEarned ?? 0}
+                            isLoyaltyEnabled={init.IsLoyaltyEnabled}
+                            onSelectMember={handleSelectMember}
+                            onSelectRedemption={setIdPointRedemptionRule}
+                        />
+                    ) : null}
+
                     {cartErrorMessage ? (
                         <div className="p-4">
                             <ErrorAlert message={cartErrorMessage} onRetry={calculateCart} />
@@ -347,6 +372,17 @@ export default function CashierPage() {
                                     </div>
                                 ) : null}
 
+                                {cart.PointDiscountAmount > 0 ? (
+                                    <div className="flex items-baseline justify-between gap-4">
+                                        <dt className="text-body text-on-surface-variant">
+                                            Tukar point ({cart.PointRedeemed} point)
+                                        </dt>
+                                        <dd className="text-numeric text-body text-on-surface">
+                                            {formatMoney(-cart.PointDiscountAmount)}
+                                        </dd>
+                                    </div>
+                                ) : null}
+
                                 <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-outline-variant pt-2">
                                     <dt className="text-title text-on-surface">Total</dt>
                                     <dd className="text-numeric text-headline text-on-surface">{cart.StrTotalAmount}</dd>
@@ -382,6 +418,8 @@ export default function CashierPage() {
                     cart={cart}
                     idWarehouse={idWarehouse}
                     listItem={listItem}
+                    idMember={idMember}
+                    idPointRedemptionRule={idPointRedemptionRule}
                     listPaymentMethod={init.ListPaymentMethod}
                     onClose={() => setShowPaymentDialog(false)}
                     onPaid={handlePaid}

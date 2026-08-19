@@ -10,6 +10,11 @@ using POS.Server.Services;
 
 namespace POS.Server.Controllers.Api.v1.BaseApi;
 
+public class SearchMemberRequestModel
+{
+    public string? SearchPhrase { get; set; }
+}
+
 public class SearchProductRequestModel
 {
     public string IdWarehouse { get; set; } = string.Empty;
@@ -71,6 +76,8 @@ public abstract class BaseCashierApiController : BaseApiController
             ListPaymentMethod = listPaymentMethod,
             DefaultWarehouseId = listWarehouse.FirstOrDefault()?.Value ?? string.Empty,
             StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
+            IsMemberEnabled = await LoyaltyMethods.IsMemberEnabledAsync(_db),
+            IsLoyaltyEnabled = await LoyaltyMethods.IsLoyaltyEnabledAsync(_db),
         });
     }
 
@@ -140,7 +147,95 @@ public abstract class BaseCashierApiController : BaseApiController
             return BadRequest(AppErrorMessages.ErrorEmptyParameterWithName("gudang"));
         }
 
-        return Ok(await TransactionMethods.CalculateAsync(_db, model.IdWarehouse, model.ListItem));
+        return Ok(await TransactionMethods.CalculateAsync(
+            _db, model.IdWarehouse, model.ListItem, model.IdMember, model.IdPointRedemptionRule));
+    }
+
+    /// <summary>
+    /// Mencari member dari nomor HP atau namanya. Hanya tersedia bila sistem member aktif,
+    /// sehingga kasir tidak dapat memakai member lewat jalan belakang saat fiturnya dimatikan.
+    /// </summary>
+    [HttpPost("search-member")]
+    public async Task<IActionResult> SearchMemberAsync([FromBody] SearchMemberRequestModel model)
+    {
+        if (!await LoyaltyMethods.IsMemberEnabledAsync(_db))
+        {
+            return BadRequest("Sistem member sedang dinonaktifkan admin.");
+        }
+
+        string searchPhrase = model?.SearchPhrase?.Trim() ?? string.Empty;
+
+        if (searchPhrase.Length < 3)
+        {
+            return BadRequest("Ketik minimal 3 karakter nomor HP atau nama member.");
+        }
+
+        string pattern = $"%{searchPhrase}%";
+
+        List<QueryMemberModel> listData = await _db.Member
+            .Where(x => x.IsActive && (EF.Functions.ILike(x.PhoneNumber, pattern) || EF.Functions.ILike(x.MemberName, pattern)))
+            .OrderBy(x => x.MemberName)
+            .Take(10)
+            .Select(x => new QueryMemberModel
+            {
+                IdMember = x.IdMember,
+                PhoneNumber = x.PhoneNumber,
+                MemberName = x.MemberName,
+                PointBalance = x.PointBalance,
+                TotalSpending = x.TotalSpending,
+                TotalTransaction = x.TotalTransaction,
+                IsActive = x.IsActive,
+            })
+            .ToListAsync();
+
+        return Ok(listData);
+    }
+
+    /// <summary>
+    /// Mendaftarkan member baru langsung dari kasir, supaya pelanggan tidak perlu
+    /// menunggu admin saat sedang mengantre.
+    /// </summary>
+    [HttpPost("register-member")]
+    public async Task<IActionResult> RegisterMemberAsync([FromBody] CreateEditMemberModel model)
+    {
+        if (!await LoyaltyMethods.IsMemberEnabledAsync(_db))
+        {
+            return BadRequest("Sistem member sedang dinonaktifkan admin.");
+        }
+
+        if (model == null)
+        {
+            return BadRequest(AppErrorMessages.ErrorEmptyParameterWithName("model"));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(GetModelStateErrorMessage());
+        }
+
+        Member entity = new() { CreatedById = CurrentUserId };
+        entity.ApplyCreateEdit(model);
+
+        _db.Member.Add(entity);
+        AddAuditLog("REGISTER_MEMBER", entity.IdMember, $"Mendaftarkan member {entity.MemberName} ({entity.PhoneNumber}).");
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception)
+        {
+            return BadRequest(TranslateDbUpdateError(exception, "Nomor HP"));
+        }
+
+        return Ok(new QueryMemberModel
+        {
+            IdMember = entity.IdMember,
+            PhoneNumber = entity.PhoneNumber,
+            MemberName = entity.MemberName,
+            PointBalance = entity.PointBalance,
+            IsActive = entity.IsActive,
+        });
     }
 
     #endregion
@@ -182,7 +277,8 @@ public abstract class BaseCashierApiController : BaseApiController
             return BadRequest("Metode pembayaran yang dipilih tidak tersedia.");
         }
 
-        CalculatedCartModel cart = await TransactionMethods.CalculateAsync(_db, model.IdWarehouse, model.ListItem);
+        CalculatedCartModel cart = await TransactionMethods.CalculateAsync(
+            _db, model.IdWarehouse, model.ListItem, model.IdMember, model.IdPointRedemptionRule);
 
         if (cart.ListItem.Count == 0)
         {
@@ -214,6 +310,9 @@ public abstract class BaseCashierApiController : BaseApiController
             DiscountAmount = cart.DiscountAmount,
             VoucherDiscountAmount = cart.VoucherDiscountAmount,
             PointDiscountAmount = cart.PointDiscountAmount,
+            IdMember = cart.Member?.IdMember,
+            PointEarned = cart.PointEarned,
+            PointRedeemed = cart.PointRedeemed,
             TotalAmount = cart.TotalAmount,
             PaymentMethodCode = paymentMethod.PaymentMethodCode,
             PaidAmount = paidAmount,
@@ -271,6 +370,41 @@ public abstract class BaseCashierApiController : BaseApiController
             entity.TotalCost = entity.ListDetail.Sum(x => x.CostPrice * x.Quantity);
             _db.Transaction.Add(entity);
 
+            // Saldo point dan riwayat belanja member ikut berubah pada transaksi database
+            // yang sama, sehingga point tidak pernah bertambah tanpa notanya (PRD BR-008).
+            if (entity.IdMember != null)
+            {
+                Member? member = await _db.Member.FirstOrDefaultAsync(x => x.IdMember == entity.IdMember);
+
+                if (member == null)
+                {
+                    await dbTransaction.RollbackAsync();
+                    return BadRequest("Member yang dipilih tidak ditemukan. Muat ulang halaman lalu coba lagi.");
+                }
+
+                if (entity.PointRedeemed > 0)
+                {
+                    if (member.PointBalance < entity.PointRedeemed)
+                    {
+                        await dbTransaction.RollbackAsync();
+                        return BadRequest($"Saldo point tinggal {member.PointBalance}, tidak cukup untuk menukar {entity.PointRedeemed} point.");
+                    }
+
+                    LoyaltyMethods.ApplyPointMovement(_db, member, PointMovementType.Redeem, entity.PointRedeemed,
+                        "Penjualan", entity.IdTransaction, entity.InvoiceNumber,
+                        $"Ditukar menjadi potongan {entity.PointDiscountAmount:N0}.", CurrentUserId);
+                }
+
+                if (entity.PointEarned > 0)
+                {
+                    LoyaltyMethods.ApplyPointMovement(_db, member, PointMovementType.Earn, entity.PointEarned,
+                        "Penjualan", entity.IdTransaction, entity.InvoiceNumber, null, CurrentUserId);
+                }
+
+                member.TotalTransaction += 1;
+                member.TotalSpending += entity.TotalAmount;
+            }
+
             AddAuditLog("CREATE_TRANSACTION", entity.IdTransaction,
                 $"Transaksi {entity.InvoiceNumber} senilai {entity.TotalAmount:N0}.");
 
@@ -323,6 +457,11 @@ public abstract class BaseCashierApiController : BaseApiController
                               WarehouseName = transaction.Warehouse!.WarehouseName,
                               PaymentMethodName = transaction.PaymentMethod!.PaymentMethodName,
                               CashierName = user != null ? user.FullName : null,
+                              MemberName = transaction.Member != null ? transaction.Member.MemberName : null,
+                              MemberPhoneNumber = transaction.Member != null ? transaction.Member.PhoneNumber : null,
+                              IdMember = transaction.IdMember,
+                              PointEarned = transaction.PointEarned,
+                              PointRedeemed = transaction.PointRedeemed,
                           };
 
         if (!CanSeeAllTransactions)
@@ -376,6 +515,11 @@ public abstract class BaseCashierApiController : BaseApiController
                 WarehouseName = transaction.Warehouse!.WarehouseName,
                 PaymentMethodName = transaction.PaymentMethod!.PaymentMethodName,
                 CashierName = user != null ? user.FullName : null,
+                MemberName = transaction.Member != null ? transaction.Member.MemberName : null,
+                MemberPhoneNumber = transaction.Member != null ? transaction.Member.PhoneNumber : null,
+                IdMember = transaction.IdMember,
+                PointEarned = transaction.PointEarned,
+                PointRedeemed = transaction.PointRedeemed,
             })
             .FirstOrDefaultAsync();
 
