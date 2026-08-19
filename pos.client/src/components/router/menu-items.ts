@@ -1,7 +1,9 @@
 import {
     ArrowLeftRight,
+    BadgePercent,
     Coins,
     Receipt,
+    TicketPercent,
     ScanLine,
     UserRound,
     ClipboardCheck,
@@ -55,6 +57,11 @@ const loyaltyItems: MenuItem[] = [
     { path: "point-redemption-rule", label: "Penukaran point", icon: Coins },
 ];
 
+const promoItems: MenuItem[] = [
+    { path: "discount", label: "Diskon produk", icon: BadgePercent, groupLabel: "Promo" },
+    { path: "voucher", label: "Voucher", icon: TicketPercent },
+];
+
 const stockViewItems: MenuItem[] = [
     { path: "inventory", label: "Stok", icon: ClipboardList, groupLabel: "Gudang" },
     { path: "stock-movement", label: "Riwayat stok", icon: ArrowLeftRight },
@@ -66,7 +73,7 @@ const stockOperationItems: MenuItem[] = [
 ];
 
 export const menuItemsByRole: Record<string, MenuItem[]> = {
-    [ROLE_ADMIN]: [dashboardItem, ...masterDataItems, ...loyaltyItems, ...stockViewItems],
+    [ROLE_ADMIN]: [dashboardItem, ...masterDataItems, ...loyaltyItems, ...promoItems, ...stockViewItems],
     [ROLE_OWNER]: [dashboardItem],
     [ROLE_SUPERVISOR]: [
         dashboardItem,

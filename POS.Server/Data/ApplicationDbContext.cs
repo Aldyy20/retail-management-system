@@ -56,6 +56,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     #endregion
 
+    #region Promo
+
+    public DbSet<Discount> Discount => Set<Discount>();
+    public DbSet<DiscountProduct> DiscountProduct => Set<DiscountProduct>();
+    public DbSet<Voucher> Voucher => Set<Voucher>();
+    public DbSet<VoucherUsage> VoucherUsage => Set<VoucherUsage>();
+
+    #endregion
+
     #region Approval
 
     public DbSet<ApprovalRequest> ApprovalRequest => Set<ApprovalRequest>();
@@ -119,6 +128,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         builder.ApplyConfiguration(new MemberConfiguration());
         builder.ApplyConfiguration(new MemberPointTransactionConfiguration());
         builder.ApplyConfiguration(new PointRedemptionRuleConfiguration());
+        builder.ApplyConfiguration(new DiscountConfiguration());
+        builder.ApplyConfiguration(new DiscountProductConfiguration());
+        builder.ApplyConfiguration(new VoucherConfiguration());
+        builder.ApplyConfiguration(new VoucherUsageConfiguration());
         builder.ApplyConfiguration(new ApprovalRequestConfiguration());
     }
 }

@@ -48,6 +48,8 @@ export default function CashierPage() {
     const [showPaymentDialog, setShowPaymentDialog] = useState(false);
     const [idMember, setIdMember] = useState<string | null>(null);
     const [idPointRedemptionRule, setIdPointRedemptionRule] = useState<string | null>(null);
+    const [voucherCodeDraft, setVoucherCodeDraft] = useState("");
+    const [voucherCode, setVoucherCode] = useState<string | null>(null);
 
     const loadInitData = useCallback(() => {
         return api
@@ -99,6 +101,7 @@ export default function CashierPage() {
                 IdWarehouse: idWarehouse,
                 IdMember: idMember,
                 IdPointRedemptionRule: idPointRedemptionRule,
+                VoucherCode: voucherCode,
                 ListItem: listItem,
             })
             .then((response) => {
@@ -106,7 +109,7 @@ export default function CashierPage() {
                 setCartErrorMessage(null);
             })
             .catch((error) => setCartErrorMessage(getAxiosErrorMessage(error)));
-    }, [idWarehouse, listItem, rolePath, idMember, idPointRedemptionRule]);
+    }, [idWarehouse, listItem, rolePath, idMember, idPointRedemptionRule, voucherCode]);
 
     useEffect(() => {
         calculateCart();
@@ -147,6 +150,8 @@ export default function CashierPage() {
         setCartErrorMessage(null);
         setIdMember(null);
         setIdPointRedemptionRule(null);
+        setVoucherCode(null);
+        setVoucherCodeDraft("");
         searchInputRef.current?.focus();
     };
 
@@ -293,6 +298,52 @@ export default function CashierPage() {
                         />
                     ) : null}
 
+                    {init?.IsVoucherEnabled ? (
+                        <div className="border-b border-outline-variant px-4 py-3">
+                            <div className="flex items-end gap-2">
+                                <TextField
+                                    label="Kode voucher"
+                                    placeholder="HEMAT20"
+                                    containerClassName="flex-1"
+                                    value={voucherCodeDraft}
+                                    onChange={(event) => setVoucherCodeDraft(event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === "Enter") {
+                                            event.preventDefault();
+                                            setVoucherCode(voucherCodeDraft.trim() || null);
+                                        }
+                                    }}
+                                    errorText={cart?.Voucher && !cart.Voucher.IsValid ? cart.Voucher.ErrorMessage ?? undefined : undefined}
+                                    helperText={
+                                        cart?.Voucher?.IsValid
+                                            ? `${cart.Voucher.VoucherName} memotong ${cart.Voucher.StrDiscountAmount}.`
+                                            : undefined
+                                    }
+                                />
+
+                                {voucherCode ? (
+                                    <Button
+                                        variant="outlined"
+                                        onClick={() => {
+                                            setVoucherCode(null);
+                                            setVoucherCodeDraft("");
+                                        }}
+                                    >
+                                        Lepas
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outlined"
+                                        onClick={() => setVoucherCode(voucherCodeDraft.trim() || null)}
+                                        disabled={voucherCodeDraft.trim().length === 0}
+                                    >
+                                        Terapkan
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    ) : null}
+
                     {cartErrorMessage ? (
                         <div className="p-4">
                             <ErrorAlert message={cartErrorMessage} onRetry={calculateCart} />
@@ -372,6 +423,17 @@ export default function CashierPage() {
                                     </div>
                                 ) : null}
 
+                                {cart.VoucherDiscountAmount > 0 ? (
+                                    <div className="flex items-baseline justify-between gap-4">
+                                        <dt className="text-body text-on-surface-variant">
+                                            Voucher {cart.Voucher?.VoucherCode ?? ""}
+                                        </dt>
+                                        <dd className="text-numeric text-body text-on-surface">
+                                            {formatMoney(-cart.VoucherDiscountAmount)}
+                                        </dd>
+                                    </div>
+                                ) : null}
+
                                 {cart.PointDiscountAmount > 0 ? (
                                     <div className="flex items-baseline justify-between gap-4">
                                         <dt className="text-body text-on-surface-variant">
@@ -420,6 +482,7 @@ export default function CashierPage() {
                     listItem={listItem}
                     idMember={idMember}
                     idPointRedemptionRule={idPointRedemptionRule}
+                    voucherCode={voucherCode}
                     listPaymentMethod={init.ListPaymentMethod}
                     onClose={() => setShowPaymentDialog(false)}
                     onPaid={handlePaid}

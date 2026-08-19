@@ -1,6 +1,7 @@
 import type { QueryApprovalRequestModel, ProductLookupModel } from "@/@dataLayer/inventory.models";
 import type { SelectListItemModel } from "@/@dataLayer/base.models";
 import type { PointRedemptionOptionModel, QueryMemberModel } from "@/@dataLayer/member.models";
+import type { VoucherValidationModel } from "@/@dataLayer/promo.models";
 
 export interface QueryPaymentMethodModel {
     PaymentMethodCode: string;
@@ -18,6 +19,7 @@ export interface CashierInitModel {
     StoreName: string;
     IsMemberEnabled: boolean;
     IsLoyaltyEnabled: boolean;
+    IsVoucherEnabled: boolean;
 }
 
 export interface CartItemModel {
@@ -54,6 +56,7 @@ export interface CalculatedCartModel {
     IdPointRedemptionRule: string | null;
     PointEarned: number;
     PointRedeemed: number;
+    Voucher: VoucherValidationModel | null;
     StrSubtotalAmount: string;
     StrDiscountAmount: string;
     StrTotalAmount: string;
@@ -91,6 +94,7 @@ export interface QueryTransactionModel {
     IdMember: string | null;
     PointEarned: number;
     PointRedeemed: number;
+    VoucherCode: string | null;
     Note: string | null;
     GrossProfit: number;
     StrTransactionDate: string;

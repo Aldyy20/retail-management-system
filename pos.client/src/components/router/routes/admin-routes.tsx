@@ -31,6 +31,14 @@ const PointRedemptionRuleCreateEditPage = lazy(
     () => import("@/pages/user-pages/common-pages/point-redemption-rule/PointRedemptionRuleCreateEditPage"),
 );
 
+// Promo Pages
+const DiscountPage = lazy(() => import("@/pages/user-pages/common-pages/discount/DiscountPage"));
+const DiscountCreateEditPage = lazy(
+    () => import("@/pages/user-pages/common-pages/discount/DiscountCreateEditPage"),
+);
+const VoucherPage = lazy(() => import("@/pages/user-pages/common-pages/voucher/VoucherPage"));
+const VoucherCreateEditPage = lazy(() => import("@/pages/user-pages/common-pages/voucher/VoucherCreateEditPage"));
+
 // Inventory Pages
 const InventoryPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/InventoryPage"));
 const StockMovementPage = lazy(() => import("@/pages/user-pages/common-pages/inventory/StockMovementPage"));
@@ -80,6 +88,14 @@ export const adminRoutes: RouteObject[] = [
     { path: "point-redemption-rule", element: <PointRedemptionRulePage /> },
     { path: "point-redemption-rule/create", element: <PointRedemptionRuleCreateEditPage /> },
     { path: "point-redemption-rule/edit/:id", element: <PointRedemptionRuleCreateEditPage /> },
+
+    // Promo Routes
+    { path: "discount", element: <DiscountPage /> },
+    { path: "discount/create", element: <DiscountCreateEditPage /> },
+    { path: "discount/edit/:id", element: <DiscountCreateEditPage /> },
+    { path: "voucher", element: <VoucherPage /> },
+    { path: "voucher/create", element: <VoucherCreateEditPage /> },
+    { path: "voucher/edit/:id", element: <VoucherCreateEditPage /> },
 
     // Inventory Routes
     { path: "inventory", element: <InventoryPage /> },

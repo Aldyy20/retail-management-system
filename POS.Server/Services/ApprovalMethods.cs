@@ -179,6 +179,25 @@ public static class ApprovalMethods
             member.TotalSpending = Math.Max(0, member.TotalSpending - transaction.TotalAmount);
         }
 
+        // Pemakaian voucher ikut ditarik supaya kuotanya kembali tersedia untuk pembeli lain.
+        if (transaction.IdVoucher != null)
+        {
+            Voucher? voucher = await db.Voucher.FirstOrDefaultAsync(x => x.IdVoucher == transaction.IdVoucher);
+
+            if (voucher != null)
+            {
+                voucher.UsageCount = Math.Max(0, voucher.UsageCount - 1);
+                voucher.DateModified = DateTime.Now;
+                voucher.ModifiedById = userId;
+            }
+
+            List<VoucherUsage> listUsage = await db.VoucherUsage
+                .Where(x => x.IdTransaction == transaction.IdTransaction)
+                .ToListAsync();
+
+            db.VoucherUsage.RemoveRange(listUsage);
+        }
+
         transaction.Status = DataStatus.Void;
         transaction.ModifiedById = userId;
         transaction.DateModified = DateTime.Now;

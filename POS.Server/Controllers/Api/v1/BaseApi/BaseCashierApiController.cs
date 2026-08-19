@@ -78,6 +78,7 @@ public abstract class BaseCashierApiController : BaseApiController
             StoreName = await GlobalList.GetSettingTextAsync(_db, AppData.SettingStoreName, "Toko Saya"),
             IsMemberEnabled = await LoyaltyMethods.IsMemberEnabledAsync(_db),
             IsLoyaltyEnabled = await LoyaltyMethods.IsLoyaltyEnabledAsync(_db),
+            IsVoucherEnabled = await PromotionMethods.IsVoucherEnabledAsync(_db),
         });
     }
 
@@ -148,7 +149,7 @@ public abstract class BaseCashierApiController : BaseApiController
         }
 
         return Ok(await TransactionMethods.CalculateAsync(
-            _db, model.IdWarehouse, model.ListItem, model.IdMember, model.IdPointRedemptionRule));
+            _db, model.IdWarehouse, model.ListItem, model.IdMember, model.IdPointRedemptionRule, model.VoucherCode));
     }
 
     /// <summary>
@@ -278,7 +279,7 @@ public abstract class BaseCashierApiController : BaseApiController
         }
 
         CalculatedCartModel cart = await TransactionMethods.CalculateAsync(
-            _db, model.IdWarehouse, model.ListItem, model.IdMember, model.IdPointRedemptionRule);
+            _db, model.IdWarehouse, model.ListItem, model.IdMember, model.IdPointRedemptionRule, model.VoucherCode);
 
         if (cart.ListItem.Count == 0)
         {
@@ -311,6 +312,8 @@ public abstract class BaseCashierApiController : BaseApiController
             VoucherDiscountAmount = cart.VoucherDiscountAmount,
             PointDiscountAmount = cart.PointDiscountAmount,
             IdMember = cart.Member?.IdMember,
+            IdVoucher = cart.Voucher != null && cart.Voucher.IsValid ? cart.Voucher.IdVoucher : null,
+            VoucherCode = cart.Voucher != null && cart.Voucher.IsValid ? cart.Voucher.VoucherCode : null,
             PointEarned = cart.PointEarned,
             PointRedeemed = cart.PointRedeemed,
             TotalAmount = cart.TotalAmount,
@@ -369,6 +372,38 @@ public abstract class BaseCashierApiController : BaseApiController
 
             entity.TotalCost = entity.ListDetail.Sum(x => x.CostPrice * x.Quantity);
             _db.Transaction.Add(entity);
+
+            // Kuota voucher diperiksa ulang di sini, bukan hanya saat menghitung, supaya
+            // dua kasir yang menebus voucher terakhir pada saat bersamaan tidak lolos berdua.
+            if (entity.IdVoucher != null)
+            {
+                Voucher? voucher = await _db.Voucher.FirstOrDefaultAsync(x => x.IdVoucher == entity.IdVoucher);
+
+                if (voucher == null)
+                {
+                    await dbTransaction.RollbackAsync();
+                    return BadRequest("Voucher yang dipakai tidak ditemukan. Muat ulang halaman lalu coba lagi.");
+                }
+
+                if (voucher.UsageLimit > 0 && voucher.UsageCount >= voucher.UsageLimit)
+                {
+                    await dbTransaction.RollbackAsync();
+                    return BadRequest($"Kuota voucher {voucher.VoucherCode} baru saja habis dipakai transaksi lain.");
+                }
+
+                voucher.UsageCount += 1;
+                voucher.DateModified = DateTime.Now;
+                voucher.ModifiedById = CurrentUserId;
+
+                _db.VoucherUsage.Add(new VoucherUsage
+                {
+                    IdVoucher = voucher.IdVoucher,
+                    IdTransaction = entity.IdTransaction,
+                    IdMember = entity.IdMember,
+                    DiscountAmount = entity.VoucherDiscountAmount,
+                    CreatedById = CurrentUserId,
+                });
+            }
 
             // Saldo point dan riwayat belanja member ikut berubah pada transaksi database
             // yang sama, sehingga point tidak pernah bertambah tanpa notanya (PRD BR-008).
@@ -462,6 +497,7 @@ public abstract class BaseCashierApiController : BaseApiController
                               IdMember = transaction.IdMember,
                               PointEarned = transaction.PointEarned,
                               PointRedeemed = transaction.PointRedeemed,
+                              VoucherCode = transaction.VoucherCode,
                           };
 
         if (!CanSeeAllTransactions)
@@ -520,6 +556,7 @@ public abstract class BaseCashierApiController : BaseApiController
                 IdMember = transaction.IdMember,
                 PointEarned = transaction.PointEarned,
                 PointRedeemed = transaction.PointRedeemed,
+                VoucherCode = transaction.VoucherCode,
             })
             .FirstOrDefaultAsync();
 

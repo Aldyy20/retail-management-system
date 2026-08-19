@@ -47,6 +47,14 @@ public class BaseTransactionModel : TransactionKeyModel, IBaseDataInfo
     /// <summary>Point yang ditukarkan menjadi potongan pada transaksi ini.</summary>
     public int PointRedeemed { get; set; }
 
+    /// <summary>Voucher yang dipakai, bila ada.</summary>
+    [StringLength(36)]
+    public string? IdVoucher { get; set; }
+
+    /// <summary>Kode voucher dibekukan, supaya nota lama tetap terbaca meski kodenya diubah.</summary>
+    [StringLength(32)]
+    public string? VoucherCode { get; set; }
+
     public decimal TotalAmount { get; set; }
 
     [Required]

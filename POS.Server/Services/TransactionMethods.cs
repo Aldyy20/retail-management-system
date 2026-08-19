@@ -24,7 +24,8 @@ public static class TransactionMethods
         string idWarehouse,
         List<CartItemModel> listItem,
         string? idMember = null,
-        string? idPointRedemptionRule = null)
+        string? idPointRedemptionRule = null,
+        string? voucherCode = null)
     {
         CalculatedCartModel result = new();
 
@@ -62,6 +63,12 @@ public static class TransactionMethods
             })
             .ToListAsync();
 
+        Dictionary<string, decimal> sellingPriceByProduct = products
+            .ToDictionary(x => x.IdProduct, x => x.SellingPrice);
+
+        Dictionary<string, decimal> discountPerUnit = await PromotionMethods.GetProductDiscountPerUnitAsync(
+            db, productIds, sellingPriceByProduct);
+
         foreach (var item in groupedItems)
         {
             var product = products.FirstOrDefault(x => x.IdProduct == item.IdProduct);
@@ -72,9 +79,11 @@ public static class TransactionMethods
                 continue;
             }
 
-            // Diskon produk masih nol pada tahap ini. Modul promo yang akan mengisinya,
-            // dan urutan hitungnya sudah disiapkan: diskon produk, lalu voucher, lalu point.
-            decimal discountAmount = 0;
+            // Diskon produk berlaku per satuan, jadi dikalikan jumlah barangnya.
+            decimal discountAmount = discountPerUnit.TryGetValue(product.IdProduct, out decimal perUnit)
+                ? perUnit * item.Quantity
+                : 0;
+
             decimal subtotal = product.SellingPrice * item.Quantity - discountAmount;
 
             result.ListItem.Add(new CalculatedCartItemModel
@@ -99,6 +108,21 @@ public static class TransactionMethods
         result.SubtotalAmount = result.ListItem.Sum(x => x.UnitPrice * x.Quantity);
         result.DiscountAmount = result.ListItem.Sum(x => x.DiscountAmount);
         result.TotalQuantity = result.ListItem.Sum(x => x.Quantity);
+
+        // Voucher dihitung dari nilai belanja setelah diskon produk, lalu penukaran point
+        // dihitung dari sisa setelah voucher. Urutan ini tidak boleh ditukar.
+        decimal amountAfterProductDiscount = result.SubtotalAmount - result.DiscountAmount;
+        result.Voucher = await PromotionMethods.ValidateVoucherAsync(
+            db, voucherCode, amountAfterProductDiscount, !string.IsNullOrWhiteSpace(idMember));
+
+        if (result.Voucher.IsValid)
+        {
+            result.VoucherDiscountAmount = result.Voucher.DiscountAmount;
+        }
+        else if (result.Voucher.ErrorMessage != null)
+        {
+            result.ListWarning.Add(result.Voucher.ErrorMessage);
+        }
 
         await ApplyMemberAsync(db, result, idMember, idPointRedemptionRule);
 

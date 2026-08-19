@@ -96,6 +96,8 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         // Member yang sudah pernah berbelanja tidak dapat dihapus, karena notanya
         // masih merujuk ke sana.
         builder.Property(x => x.IdMember).HasMaxLength(36);
+        builder.Property(x => x.IdVoucher).HasMaxLength(36);
+        builder.Property(x => x.VoucherCode).HasMaxLength(32);
         builder.HasOne(x => x.Member)
             .WithMany()
             .HasForeignKey(x => x.IdMember)

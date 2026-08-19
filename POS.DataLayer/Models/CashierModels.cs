@@ -32,6 +32,10 @@ public class CalculateCartRequestModel
     [StringLength(36)]
     public string? IdPointRedemptionRule { get; set; }
 
+    /// <summary>Kode voucher yang diketik kasir. Kosong berarti tanpa voucher.</summary>
+    [StringLength(32)]
+    public string? VoucherCode { get; set; }
+
     public List<CartItemModel> ListItem { get; set; } = [];
 }
 
@@ -86,6 +90,9 @@ public class CalculatedCartModel
 
     public int PointRedeemed { get; set; }
 
+    /// <summary>Hasil pemeriksaan voucher, termasuk alasan bila ditolak.</summary>
+    public VoucherValidationModel? Voucher { get; set; }
+
     public string StrSubtotalAmount => SubtotalAmount.ToStrMoney();
     public string StrDiscountAmount => DiscountAmount.ToStrMoney();
     public string StrTotalAmount => TotalAmount.ToStrMoney();
@@ -113,6 +120,9 @@ public class CreateTransactionRequestModel
 
     [StringLength(36)]
     public string? IdPointRedemptionRule { get; set; }
+
+    [StringLength(32)]
+    public string? VoucherCode { get; set; }
 
     public List<CartItemModel> ListItem { get; set; } = [];
 }
@@ -144,4 +154,7 @@ public class CashierInitModel
     public bool IsMemberEnabled { get; set; }
 
     public bool IsLoyaltyEnabled { get; set; }
+
+    /// <summary>Menentukan apakah kolom kode voucher muncul di layar kasir.</summary>
+    public bool IsVoucherEnabled { get; set; }
 }

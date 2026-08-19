@@ -15,6 +15,7 @@ interface PaymentDialogProps {
     listItem: CartItemModel[];
     idMember: string | null;
     idPointRedemptionRule: string | null;
+    voucherCode: string | null;
     listPaymentMethod: QueryPaymentMethodModel[];
     onClose: () => void;
     onPaid: (idTransaction: string, invoiceNumber: string) => void;
@@ -30,6 +31,7 @@ export function PaymentDialog({
     listItem,
     idMember,
     idPointRedemptionRule,
+    voucherCode,
     listPaymentMethod,
     onClose,
     onPaid,
@@ -65,6 +67,7 @@ export function PaymentDialog({
                     IdWarehouse: idWarehouse,
                     IdMember: idMember,
                     IdPointRedemptionRule: idPointRedemptionRule,
+                    VoucherCode: voucherCode,
                     PaymentMethodCode: paymentMethodCode,
                     PaidAmount: paid,
                     Note: note || null,
